@@ -190,7 +190,7 @@ input { font: inherit; }
 .tile { position: relative; flex: 0 0 auto; width: clamp(128px, 13vw, 180px); scroll-snap-align: start; z-index: 1; }
 .poster {
   position: relative; aspect-ratio: 2 / 3; border-radius: var(--radius); overflow: hidden; background: var(--bg-3);
-  transition: transform 0.35s var(--ease) 0.18s, box-shadow 0.35s 0.18s;
+  transition: transform 0.3s var(--ease), box-shadow 0.3s ease;
 }
 .poster img { width: 100%; height: 100%; object-fit: cover; }
 .poster::after {
