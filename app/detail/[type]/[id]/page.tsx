@@ -1,6 +1,7 @@
-import { getDetail, imgUrl, MediaType } from "@/lib/tmdb";
+import { getDetail, getSeason, imgUrl, MediaType, TMDBEpisode } from "@/lib/tmdb";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import SeasonClient from "./SeasonClient";
 
 export const dynamic = "force-dynamic";
 
@@ -65,20 +66,11 @@ export default async function DetailPage({ params }: Props) {
 
         {params.type === "tv" && detail.seasons && detail.seasons.length > 0 && (
           <div className="mt-12">
-            <h2 className="section-title">Temporadas</h2>
-            <div className="season-tabs">
-              {detail.seasons
-                .filter((s) => s.season_number > 0)
-                .map((s) => (
-                  <Link
-                    key={s.season_number}
-                    href={`/watch/tv/${params.id}?season=${s.season_number}`}
-                    className="season-tab"
-                  >
-                    {s.name}
-                  </Link>
-                ))}
-            </div>
+            <h2 className="section-title">Episodios</h2>
+            <SeasonClient
+              tvId={params.id}
+              seasons={detail.seasons.filter((s) => s.season_number > 0)}
+            />
           </div>
         )}
       </div>
