@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { TMDBItem, imgUrl } from "@/lib/tmdb";
 
+const FALLBACK_POSTER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750'%3E%3Crect fill='%231c1c25' width='500' height='750'/%3E%3Ctext fill='%236b7180' font-family='sans-serif' font-size='18' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EHomeX%3C/text%3E%3C/svg%3E";
+
 interface CardProps {
   item: TMDBItem;
   showLabel?: boolean;
@@ -22,16 +24,17 @@ export default function Card({ item, showLabel = true, badge, href }: CardProps)
           src={imgUrl(item.poster_path, "w500")!}
           alt={title}
           loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = FALLBACK_POSTER;
+          }}
         />
       ) : (
-        <div
-          className="skeleton ratio"
-          role="img"
-          aria-label={title}
-          style={{ display: "grid", placeItems: "center", fontSize: "0.8rem" }}
-        >
-          {title}
-        </div>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={FALLBACK_POSTER}
+          alt={title}
+          loading="lazy"
+        />
       )}
 
       {badge && <span className="card-badge">{badge}</span>}
