@@ -1,97 +1,103 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { TMDBItem, imgUrl } from "@/lib/tmdb";
+import { TMDBItem } from "@/lib/tmdb";
+import { genreNames } from "@/lib/genres";
 
-interface HeroCarouselProps {
-  items: TMDBItem[];
-}
+const GLOWS = ["#1e3a5f", "#3b4a63", "#28405f", "#2f4468", "#3a5580", "#334157"];
+const backdrop = (path: string) => `https://image.tmdb.org/t/p/w1280${path}`;
 
-export default function HeroCarousel({ items }: HeroCarouselProps) {
-  const [current, setCurrent] = useState(0);
+export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
+  const slides = items.filter((i) => i.backdrop_path).slice(0, 6);
+  const count = slides.length;
+  const [cur, setCur] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const validItems = items.filter((i) => i.backdrop_path);
-  const count = validItems.length;
+  const next = useCallback(() => setCur((c) => (c + 1) % Math.max(count, 1)), [count]);
 
-  const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % count);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el && /INPUT|TEXTAREA/.test(el.tagName)) return;
+      if (document.body.style.overflow === "hidden") return;
+      if (e.key === "ArrowRight") setCur((c) => (c + 1) % count);
+      if (e.key === "ArrowLeft") setCur((c) => (c - 1 + count) % count);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [count]);
-
-  useEffect(() => {
-    if (paused || count <= 1) return;
-    const interval = setInterval(next, 7000);
-    return () => clearInterval(interval);
-  }, [paused, next, count]);
-
-  useEffect(() => {
-    const onVis = () => setPaused(document.hidden);
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, []);
 
   if (count === 0) return null;
 
-  const item = validItems[current];
-  const title = item.title || item.name || "";
-  const year = (item.release_date || item.first_air_date || "").slice(0, 4);
-  const type = item.title ? "movie" : "tv";
-
   return (
-    <div
-      className="hero"
+    <section
+      className={`hero${paused ? " paused" : ""}`}
+      style={{ "--gc": GLOWS[cur % GLOWS.length] } as React.CSSProperties}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      aria-roledescription="carousel"
+      aria-label="Destacados"
     >
-      <div className="hero-bg" key={item.id}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imgUrl(item.backdrop_path, "original")!}
-          alt={title}
-        />
-      </div>
+      {slides.map((item, i) => {
+        const title = item.title || item.name || "";
+        const year = (item.release_date || item.first_air_date || "").slice(0, 4);
+        const type = item.media_type || (item.title ? "movie" : "tv");
+        const genres = genreNames(item.genre_ids, 2);
+        const on = i === cur;
+        const tab = on ? 0 : -1;
+        return (
+          <article key={item.id} className={`slide${on ? " on" : ""}`} aria-hidden={!on}>
+            <div className="slide-art">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={backdrop(item.backdrop_path!)}
+                alt=""
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+              />
+            </div>
+            <div className="slide-copy">
+              <div className="slide-kind">
+                {[type === "movie" ? "Película" : "Serie", ...genres].join(", ")}
+              </div>
+              <h1 className="slide-title">{title}</h1>
+              <div className="slide-meta">
+                {item.vote_average > 0 && <span className="score">★ {item.vote_average.toFixed(1)}</span>}
+                {year && <span>{year}</span>}
+              </div>
+              <p className="slide-desc">{item.overview}</p>
+              <div className="slide-actions">
+                <Link href={`/watch/${type}/${item.id}`} className="btn btn-primary" tabIndex={tab}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M7 4v16l13-8z" />
+                  </svg>
+                  Reproducir
+                </Link>
+                <Link href={`/detail/${type}/${item.id}`} className="btn btn-ghost" tabIndex={tab}>
+                  Más info
+                </Link>
+              </div>
+            </div>
+          </article>
+        );
+      })}
 
-      <div className="hero-body" key={`body-${item.id}`}>
-        <span className="hero-tag">{type === "movie" ? "Película" : "Serie"}</span>
-        <h1 className="hero-title">{title}</h1>
-        <div className="hero-meta">
-          <span className="score">★ {item.vote_average.toFixed(1)}</span>
-          {year && <span>{year}</span>}
-          <span className="badge">HD</span>
-        </div>
-        <p className="hero-overview">{item.overview}</p>
-        <div className="hero-actions">
-          <Link
-            href={`/watch/${type}/${item.id}`}
-            className="btn btn-primary"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 4v16l13-8z" />
-            </svg>
-            Reproducir
-          </Link>
-          <Link
-            href={`/detail/${type}/${item.id}`}
-            className="btn btn-ghost"
-          >
-            Más info
-          </Link>
-        </div>
-      </div>
+      <div className="hero-glow" aria-hidden="true" />
 
-      <div className="hero-dots">
-        {validItems.map((_, i) => (
+      <div className="hero-bars">
+        {slides.map((s, i) => (
           <button
-            key={i}
-            className={`hero-dot${i === current ? " on" : ""}`}
-            onClick={() => setCurrent(i)}
-            aria-label={`Slide ${i + 1}`}
+            key={s.id}
+            className={`hero-bar${i === cur ? " on" : i < cur ? " done" : ""}`}
+            onClick={() => setCur(i)}
+            aria-label={`Ir al destacado ${i + 1}`}
+            aria-current={i === cur}
           >
-            <span />
+            <span onAnimationEnd={i === cur ? next : undefined} />
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,22 +1,47 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import SplashScreen from "@/components/SplashScreen";
-import BottomNav from "@/components/BottomNav";
+import Splash from "@/components/Splash";
+import QuickViewProvider from "@/components/QuickView";
 
 export const metadata: Metadata = {
   title: "HomeX - Streaming",
   description: "Tu plataforma de streaming personal",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#050608",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
-        <SplashScreen />
-        <Navbar />
-        <main className="main">{children}</main>
-        <BottomNav />
+        <Splash />
+        <QuickViewProvider>
+          <Navbar />
+          <main className="main">{children}</main>
+          <footer className="foot">
+            <span className="logo" style={{ fontSize: "1rem" }}>
+              <b>HOME</b>
+              <i>X</i>
+            </span>
+            <span>
+              Este producto usa la API de TMDB, pero no está avalado ni certificado por TMDB.
+            </span>
+          </footer>
+        </QuickViewProvider>
       </body>
     </html>
   );

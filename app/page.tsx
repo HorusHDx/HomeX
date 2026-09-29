@@ -2,7 +2,6 @@ import { getTrending, getPopular, getTopRated } from "@/lib/tmdb";
 import HeroCarousel from "@/components/HeroCarousel";
 import Rail from "@/components/Rail";
 import ContinueWatching from "@/components/ContinueWatching";
-import Top10Rail from "@/components/Top10Rail";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +19,7 @@ export default async function HomePage() {
       <HeroCarousel items={trending.results} />
       <div className="rails">
         <ContinueWatching />
-        <Top10Rail items={trending.results} />
+        <Rail title="Top 10 de la semana" variant="top" items={trending.results} />
         <Rail title="Películas populares" items={popularMovies.results} />
         <Rail title="Series populares" items={popularTv.results} />
         <Rail title="Películas mejor valoradas" items={topMovies.results} />
