@@ -1,9 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import type { MouseEvent } from "react";
 import { TMDBItem, imgUrl } from "@/lib/tmdb";
-import { useQuickView } from "./QuickView";
 
 const FALLBACK_POSTER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750'%3E%3Crect fill='%23111b2e' width='500' height='750'/%3E%3Ctext fill='%235d6779' font-family='sans-serif' font-size='18' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EHomeX%3C/text%3E%3C/svg%3E";
 
@@ -23,23 +19,15 @@ const PlayIcon = () => (
 );
 
 export default function Card({ item, badge, href, variant = "poster", rank }: CardProps) {
-  const { open } = useQuickView();
   const type = item.media_type || (item.title ? "movie" : "tv");
   const destination = href || `/detail/${type}/${item.id}`;
   const title = item.title || item.name || "";
   const year = (item.release_date || item.first_air_date || "").slice(0, 4);
   const kind = type === "movie" ? "Película" : "Serie";
 
-  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    if (href || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    open(item, type, e.currentTarget);
-  };
-
   return (
     <Link
       href={destination}
-      onClick={onClick}
       className={`tile${variant === "top" ? " top" : ""}`}
       title={title}
     >

@@ -68,11 +68,11 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
               </div>
               <p className="slide-desc">{item.overview}</p>
               <div className="slide-actions">
-                <Link href={`/watch/${type}/${item.id}`} className="btn btn-primary" tabIndex={tab}>
+                <Link href={type === "movie" ? `/watch/${type}/${item.id}` : `/detail/${type}/${item.id}`} className="btn btn-primary" tabIndex={tab}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M7 4v16l13-8z" />
                   </svg>
-                  Reproducir
+                  {type === "movie" ? "Reproducir" : "Ver episodios"}
                 </Link>
                 <Link href={`/detail/${type}/${item.id}`} className="btn btn-ghost" tabIndex={tab}>
                   Más info
