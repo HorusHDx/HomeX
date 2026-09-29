@@ -1,45 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const [query, setQuery] = useState("");
+  const pathname = usePathname();
   const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+  const [term, setTerm] = useState("");
+
+  const onHome = pathname === "/";
+  const solid = scrolled || !onHome;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    const q = term.trim();
+    if (!q) return;
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/90 to-transparent">
-      <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-4">
-        <Link href="/" className="text-2xl font-bold text-brand">
-          HomeX
+    <header className={`header${solid ? " solid" : ""}`}>
+      <Link href="/" className="logo" aria-label="HomeX — inicio">
+        Home<span>X</span>
+      </Link>
+
+      <nav className="nav">
+        <Link href="/" className={pathname === "/" ? "active" : ""}>
+          Inicio
         </Link>
-        <div className="flex gap-4 text-sm">
-          <Link href="/" className="hover:text-gray-300">
-            Inicio
-          </Link>
-          <Link href="/genre/movie" className="hover:text-gray-300">
-            Películas
-          </Link>
-          <Link href="/genre/tv" className="hover:text-gray-300">
-            Series
-          </Link>
-        </div>
-        <form onSubmit={handleSearch} className="ml-auto">
+        <Link href="/genre/movie" className={pathname === "/genre/movie" ? "active" : ""}>
+          Películas
+        </Link>
+        <Link href="/genre/tv" className={pathname === "/genre/tv" ? "active" : ""}>
+          Series
+        </Link>
+      </nav>
+
+      <div className="header-right">
+        <form className="search" onSubmit={handleSearch} role="search">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
           <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar..."
-            className="rounded bg-black/60 px-3 py-1.5 text-sm outline-none ring-1 ring-white/20 focus:ring-white/50"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            placeholder="Buscar títulos…"
+            aria-label="Buscar"
           />
         </form>
       </div>
-    </nav>
+    </header>
   );
 }

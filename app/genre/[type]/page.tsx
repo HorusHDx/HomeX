@@ -1,5 +1,5 @@
 import { getPopular, getTopRated, MediaType } from "@/lib/tmdb";
-import ContentRow from "@/components/ContentRow";
+import Rail from "@/components/Rail";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +15,12 @@ export default async function GenrePage({ params }: { params: { type: MediaType 
   ]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-28 pb-16">
-      <h1 className="mb-8 text-3xl font-bold">{TITLES[params.type]}</h1>
-      <div className="space-y-10">
-        <ContentRow title="Populares" items={popular.results} />
-        <ContentRow title="Mejor valoradas" items={topRated.results} />
+    <div className="page">
+      <h1 className="section-title">{TITLES[params.type]}</h1>
+      <p className="section-sub">Catálogo completo</p>
+      <div className="rails">
+        <Rail title="Populares" items={popular.results} />
+        <Rail title="Mejor valoradas" items={topRated.results} />
       </div>
     </div>
   );
