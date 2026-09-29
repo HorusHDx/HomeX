@@ -3,23 +3,26 @@
 import { useEffect, useState } from "react";
 
 export default function Splash() {
-  const [phase, setPhase] = useState<"in" | "out" | "gone">("gone");
+  const [phase, setPhase] = useState<"in" | "out" | "gone">(() => {
+    try {
+      return sessionStorage.getItem("homex:splash") === "1" ? "gone" : "in";
+    } catch {
+      return "in";
+    }
+  });
 
   useEffect(() => {
-    let seen = false;
     try {
-      seen = sessionStorage.getItem("homex:splash") === "1";
       sessionStorage.setItem("homex:splash", "1");
     } catch {}
-    if (seen) return;
-    setPhase("in");
+    if (phase === "gone") return;
     const t1 = setTimeout(() => setPhase("out"), 1100);
     const t2 = setTimeout(() => setPhase("gone"), 1700);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, []);
+  }, [phase]);
 
   if (phase === "gone") return null;
 

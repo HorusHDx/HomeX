@@ -128,12 +128,19 @@ function extractIframes(html: string): ScrapedServer[] {
 
 export async function scrapeServers(embedUrl: string): Promise<ScrapedServer[]> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     const res = await fetch(embedUrl, {
       headers: {
         "User-Agent": UA,
         "Accept-Language": "es-ES,es;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) return [];
 
@@ -145,8 +152,8 @@ export async function scrapeServers(embedUrl: string): Promise<ScrapedServer[]> 
     const iframes = extractIframes(html);
     if (iframes.length > 0) return iframes;
 
-    return [];
+    return [{ name: "Servidor Principal", url: embedUrl, lang: "original" }];
   } catch {
-    return [];
+    return [{ name: "Servidor Principal", url: embedUrl, lang: "original" }];
   }
 }

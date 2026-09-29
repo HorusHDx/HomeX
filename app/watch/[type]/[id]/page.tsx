@@ -73,9 +73,9 @@ export default function WatchPage({ params }: Props) {
   }, [params.type, params.id, season]);
 
   useEffect(() => {
-    if (params.type === "tv" && servers.length > 0 && detailData) {
+    if (params.type === "tv" && servers.length > 0) {
       markWatched(
-        { id: Number(params.id), media: "tv", title: detailData.title, poster: detailData.poster },
+        { id: Number(params.id), media: "tv", title: detailData?.title || params.id, poster: detailData?.poster || null },
         season,
         episode
       );
