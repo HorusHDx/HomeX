@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { MouseEvent, PointerEvent } from "react";
+import type { MouseEvent } from "react";
 import { TMDBItem, imgUrl } from "@/lib/tmdb";
 import { useQuickView } from "./QuickView";
 
@@ -36,12 +36,6 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
     open(item, type, e.currentTarget);
   };
 
-  const onMove = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
-    e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
-  };
-
   return (
     <Link
       href={destination}
@@ -52,7 +46,7 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
       {variant === "top" && rank != null && (
         <span className="tile-num" aria-hidden="true">{rank}</span>
       )}
-      <div className="poster" onPointerMove={onMove}>
+      <div className="poster">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.poster_path ? imgUrl(item.poster_path, "w500")! : FALLBACK_POSTER}

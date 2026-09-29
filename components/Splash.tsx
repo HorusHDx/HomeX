@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function Splash() {
-  const [phase, setPhase] = useState<"in" | "out" | "gone">("in");
+  const [phase, setPhase] = useState<"in" | "out" | "gone">("gone");
 
   useEffect(() => {
     let seen = false;
@@ -11,10 +11,8 @@ export default function Splash() {
       seen = sessionStorage.getItem("homex:splash") === "1";
       sessionStorage.setItem("homex:splash", "1");
     } catch {}
-    if (seen) {
-      setPhase("gone");
-      return;
-    }
+    if (seen) return;
+    setPhase("in");
     const t1 = setTimeout(() => setPhase("out"), 1100);
     const t2 = setTimeout(() => setPhase("gone"), 1700);
     return () => {
