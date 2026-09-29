@@ -106,6 +106,26 @@ function collect(data: Record<string, unknown>): ScrapedServer[] {
   return out;
 }
 
+function extractIframes(html: string): ScrapedServer[] {
+  const out: ScrapedServer[] = [];
+  const seen = new Set<string>();
+  const iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
+  let match;
+
+  while ((match = iframeRegex.exec(html)) !== null) {
+    const url = match[1];
+    if (!url || url.includes("about:blank")) continue;
+    if (!/^https?:\/\//i.test(url)) continue;
+    if (isDirectMedia(url)) continue;
+    if (seen.has(url)) continue;
+
+    seen.add(url);
+    out.push({ name: `Embed ${out.length + 1}`, url, lang: "original" });
+  }
+
+  return out;
+}
+
 export async function scrapeServers(embedUrl: string): Promise<ScrapedServer[]> {
   try {
     const res = await fetch(embedUrl, {
@@ -118,7 +138,14 @@ export async function scrapeServers(embedUrl: string): Promise<ScrapedServer[]> 
     if (!res.ok) return [];
 
     const html = await res.text();
-    return extractServers(html, "finalizePlayer(");
+
+    const servers = extractServers(html, "finalizePlayer(");
+    if (servers.length > 0) return servers;
+
+    const iframes = extractIframes(html);
+    if (iframes.length > 0) return iframes;
+
+    return [];
   } catch {
     return [];
   }
