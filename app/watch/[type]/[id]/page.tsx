@@ -10,15 +10,23 @@ interface Props {
   params: { type: "movie" | "tv"; id: string };
 }
 
-const LANG_ORDER = ["latino", "castellano", "espanol", "español", "subtitulado", "original"];
+const LANG_ORDER = ["latino", "castellano", "subtitulado", "original"];
 
 function normalizeLang(lang: string): string {
   const l = lang.toLowerCase().trim();
-  if (l.includes("latino") || l.includes("mexico") || l.includes("mx")) return "Audio Latino Mx";
-  if (l.includes("castellano") || l.includes("español") || l.includes("espanol")) return "Audio Castellano Esp";
-  if (l.includes("sub")) return "Audio Original Subtitulado";
-  return lang.charAt(0).toUpperCase() + lang.slice(1);
+  if (l.includes("latino") || l.includes("mexico") || l.includes("mx")) return "latino";
+  if (l.includes("castellano") || l.includes("español") || l.includes("espanol")) return "castellano";
+  if (l.includes("sub")) return "subtitulado";
+  if (l.includes("original")) return "original";
+  return l;
 }
+
+const LANG_LABELS: Record<string, string> = {
+  latino: "Audio Latino Mx",
+  castellano: "Audio Castellano Esp",
+  subtitulado: "Audio Original Subtitulado",
+  original: "Audio Original",
+};
 
 export default function WatchPage({ params }: Props) {
   const searchParams = useSearchParams();
@@ -143,7 +151,7 @@ export default function WatchPage({ params }: Props) {
 
       {groups.map((group) => (
         <div className="watch-audio" key={group.lang}>
-          <h2 className="watch-audio-title">{group.lang}</h2>
+          <h2 className="watch-audio-title">{LANG_LABELS[group.lang] || group.lang}</h2>
           <div className="watch-audio-list">
             {group.items.map((s, i) => (
               <button
