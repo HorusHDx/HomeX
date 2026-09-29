@@ -21,7 +21,7 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
 
   useEffect(() => {
     if (paused || count <= 1) return;
-    const interval = setInterval(next, 8000);
+    const interval = setInterval(next, 7000);
     return () => clearInterval(interval);
   }, [paused, next, count]);
 
@@ -53,7 +53,7 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
       </div>
 
       <div className="hero-body" key={`body-${item.id}`}>
-        <span className="hero-tag">HomeX Original</span>
+        <span className="hero-tag">{type === "movie" ? "Película" : "Serie"}</span>
         <h1 className="hero-title">{title}</h1>
         <div className="hero-meta">
           <span className="score">★ {item.vote_average.toFixed(1)}</span>
@@ -66,7 +66,10 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
             href={`/watch/${type}/${item.id}`}
             className="btn btn-primary"
           >
-            ▶ Reproducir
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 4v16l13-8z" />
+            </svg>
+            Reproducir
           </Link>
           <Link
             href={`/detail/${type}/${item.id}`}
@@ -81,10 +84,12 @@ export default function HeroCarousel({ items }: HeroCarouselProps) {
         {validItems.map((_, i) => (
           <button
             key={i}
-            className={i === current ? "on" : ""}
+            className={`hero-dot${i === current ? " on" : ""}`}
             onClick={() => setCurrent(i)}
             aria-label={`Slide ${i + 1}`}
-          />
+          >
+            <span />
+          </button>
         ))}
       </div>
     </div>
