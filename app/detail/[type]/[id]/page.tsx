@@ -1,7 +1,8 @@
-import { getDetail, getSeason, imgUrl, MediaType, TMDBEpisode } from "@/lib/tmdb";
+import { getDetail, getRecommendations, getSeason, imgUrl, MediaType, TMDBEpisode } from "@/lib/tmdb";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import SeasonClient from "./SeasonClient";
+import Card from "@/components/Card";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ export default async function DetailPage({ params }: Props) {
 
   const title = detail.title || detail.name || "";
   const year = (detail.release_date || detail.first_air_date || "").slice(0, 4);
+
+  const recommendations = await getRecommendations(params.type, params.id).catch(() => null);
+  const similarItems = recommendations?.results?.slice(0, 12) || [];
 
   return (
     <div className="relative min-h-screen">
@@ -71,6 +75,20 @@ export default async function DetailPage({ params }: Props) {
               tvId={params.id}
               seasons={detail.seasons.filter((s) => s.season_number > 0)}
             />
+          </div>
+        )}
+
+        {similarItems.length > 0 && (
+          <div className="mt-12">
+            <h2 className="section-title">También te puede gustar</h2>
+            <div className="grid">
+              {similarItems.map((item) => (
+                <Card
+                  key={`${item.media_type || params.type}-${item.id}`}
+                  item={{ ...item, media_type: item.media_type || params.type }}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

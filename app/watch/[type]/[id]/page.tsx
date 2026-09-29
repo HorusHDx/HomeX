@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ScrapedServer, getMovieEmbedUrl, getTvEmbedUrl } from "@/lib/unlimplay";
 import { markWatched } from "@/lib/continue";
+import { getSeason, TMDBEpisode } from "@/lib/tmdb";
 
 interface Props {
   params: { type: "movie" | "tv"; id: string };
@@ -30,19 +31,21 @@ const LANG_LABELS: Record<string, string> = {
 
 export default function WatchPage({ params }: Props) {
   const searchParams = useSearchParams();
-  const season = searchParams.get("season") || "1";
-  const episode = searchParams.get("episode") || "1";
+  const router = useRouter();
+  const season = parseInt(searchParams.get("season") || "1");
+  const episode = parseInt(searchParams.get("episode") || "1");
 
   const [servers, setServers] = useState<ScrapedServer[]>([]);
   const [activeServer, setActiveServer] = useState<ScrapedServer | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFull, setIsFull] = useState(false);
+  const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const frameRef = useRef<HTMLDivElement>(null);
 
   const embedUrl =
     params.type === "movie"
       ? getMovieEmbedUrl(params.id)
-      : getTvEmbedUrl(params.id, parseInt(season), parseInt(episode));
+      : getTvEmbedUrl(params.id, season, episode);
 
   useEffect(() => {
     setLoading(true);
@@ -59,11 +62,18 @@ export default function WatchPage({ params }: Props) {
   }, [params.type, params.id, season, episode]);
 
   useEffect(() => {
+    if (params.type !== "tv") return;
+    getSeason(params.id, season)
+      .then((data) => setEpisodes(data.episodes || []))
+      .catch(() => {});
+  }, [params.type, params.id, season]);
+
+  useEffect(() => {
     if (params.type === "tv" && servers.length > 0) {
       markWatched(
         { id: Number(params.id), media: "tv", title: params.id, poster: null },
-        parseInt(season),
-        parseInt(episode)
+        season,
+        episode
       );
     }
   }, [params.type, params.id, season, episode, servers.length]);
@@ -108,14 +118,30 @@ export default function WatchPage({ params }: Props) {
     (s) => !LANG_ORDER.includes(normalizeLang(s.lang))
   );
 
+  const currentIndex = episodes.findIndex((e) => e.episode_number === episode);
+  const prevEp = currentIndex > 0 ? episodes[currentIndex - 1] : null;
+  const nextEp = currentIndex >= 0 && currentIndex < episodes.length - 1 ? episodes[currentIndex + 1] : null;
+
+  const goToEpisode = (epNum: number) => {
+    router.push(`/watch/tv/${params.id}?season=${season}&episode=${epNum}`);
+  };
+
+  const backHref = params.type === "tv"
+    ? `/detail/tv/${params.id}`
+    : `/detail/movie/${params.id}`;
+
   return (
     <div className={`watch${isFull ? " css-full" : ""}`}>
       <div className="watch-top">
-        <Link href={`/detail/${params.type}/${params.id}`} className="watch-back">
+        <Link href={backHref} className="watch-back">
           ← Volver
         </Link>
         <div className="watch-title">
-          <h1>{params.type === "movie" ? "Película" : `T${season} E${episode}`}</h1>
+          <h1>
+            {params.type === "movie"
+              ? "Película"
+              : `T${season} E${episode}`}
+          </h1>
         </div>
         <button className="watch-fullbtn" onClick={toggleFull}>
           {isFull ? "Salir" : "Pantalla completa"}
@@ -148,6 +174,28 @@ export default function WatchPage({ params }: Props) {
           />
         )}
       </div>
+
+      {params.type === "tv" && episodes.length > 0 && (
+        <div className="watch-nav">
+          <button
+            className="watch-navbtn"
+            disabled={!prevEp}
+            onClick={() => prevEp && goToEpisode(prevEp.episode_number)}
+          >
+            ← Anterior
+          </button>
+          <span className="watch-nav-pos">
+            Episodio {episode} de {episodes.length}
+          </span>
+          <button
+            className="watch-navbtn"
+            disabled={!nextEp}
+            onClick={() => nextEp && goToEpisode(nextEp.episode_number)}
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
 
       {groups.map((group) => (
         <div className="watch-audio" key={group.lang}>

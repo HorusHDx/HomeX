@@ -468,3 +468,68 @@ input { font: inherit; }
 
 /* ---------- continue watching ---------- */
 .continue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+
+/* ---------- animations ---------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade { animation: fadeIn 0.4s ease both; }
+.animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.animate-scale { animation: scaleIn 0.3s ease both; }
+
+.rail .card { animation: fadeIn 0.4s ease both; }
+.rail .card:nth-child(1) { animation-delay: 0.05s; }
+.rail .card:nth-child(2) { animation-delay: 0.1s; }
+.rail .card:nth-child(3) { animation-delay: 0.15s; }
+.rail .card:nth-child(4) { animation-delay: 0.2s; }
+.rail .card:nth-child(5) { animation-delay: 0.25s; }
+.rail .card:nth-child(6) { animation-delay: 0.3s; }
+.rail .card:nth-child(7) { animation-delay: 0.35s; }
+.rail .card:nth-child(8) { animation-delay: 0.4s; }
+
+.episode-item { animation: fadeIn 0.3s ease both; }
+.episode-item:nth-child(1) { animation-delay: 0.05s; }
+.episode-item:nth-child(2) { animation-delay: 0.1s; }
+.episode-item:nth-child(3) { animation-delay: 0.15s; }
+.episode-item:nth-child(4) { animation-delay: 0.2s; }
+.episode-item:nth-child(5) { animation-delay: 0.25s; }
+
+.grid .card { animation: fadeIn 0.4s ease both; }
+.grid .card:nth-child(1) { animation-delay: 0.05s; }
+.grid .card:nth-child(2) { animation-delay: 0.1s; }
+.grid .card:nth-child(3) { animation-delay: 0.15s; }
+.grid .card:nth-child(4) { animation-delay: 0.2s; }
+.grid .card:nth-child(5) { animation-delay: 0.25s; }
+.grid .card:nth-child(6) { animation-delay: 0.3s; }
+
+.watch-server { transition: all 0.15s ease; }
+.watch-server:hover { transform: translateY(-2px); }
+.watch-navbtn { transition: all 0.15s ease; }
+.watch-navbtn:hover:not(:disabled) { transform: translateY(-2px); }
+.season-tab { transition: all 0.15s ease; }
+.season-tab:hover { transform: translateY(-2px); }
+
+.btn { transition: all 0.15s ease; }
+.btn:hover { transform: scale(1.04); }
+.btn:active { transform: scale(0.98); }
+
+.card { transition: all 0.22s cubic-bezier(0.2, 0.7, 0.3, 1); }
+.card:hover { transform: translateY(-6px) scale(1.05); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
