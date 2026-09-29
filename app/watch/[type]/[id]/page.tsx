@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ScrapedServer, getMovieEmbedUrl, getTvEmbedUrl } from "@/lib/unlimplay";
 import { markWatched } from "@/lib/continue";
-import { getSeason, TMDBEpisode } from "@/lib/tmdb";
+import { getDetail, getSeason, TMDBEpisode } from "@/lib/tmdb";
 
 interface Props {
   params: { type: "movie" | "tv"; id: string };
@@ -40,6 +40,7 @@ export default function WatchPage({ params }: Props) {
   const [loading, setLoading] = useState(true);
   const [isFull, setIsFull] = useState(false);
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
+  const [detailData, setDetailData] = useState<{ title: string; poster: string | null } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
   const embedUrl =
@@ -66,17 +67,20 @@ export default function WatchPage({ params }: Props) {
     getSeason(params.id, season)
       .then((data) => setEpisodes(data.episodes || []))
       .catch(() => {});
+    getDetail("tv", params.id)
+      .then((data) => setDetailData({ title: data.name || data.title || "", poster: data.poster_path }))
+      .catch(() => {});
   }, [params.type, params.id, season]);
 
   useEffect(() => {
-    if (params.type === "tv" && servers.length > 0) {
+    if (params.type === "tv" && servers.length > 0 && detailData) {
       markWatched(
-        { id: Number(params.id), media: "tv", title: params.id, poster: null },
+        { id: Number(params.id), media: "tv", title: detailData.title, poster: detailData.poster },
         season,
         episode
       );
     }
-  }, [params.type, params.id, season, episode, servers.length]);
+  }, [params.type, params.id, season, episode, servers.length, detailData]);
 
   const toggleFull = async () => {
     const el = frameRef.current;

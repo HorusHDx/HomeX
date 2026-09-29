@@ -47,6 +47,9 @@ export default function Navbar() {
         <Link href="/genre/tv" className={pathname === "/genre/tv" ? "active" : ""}>
           Series
         </Link>
+        <Link href="/historial" className={pathname === "/historial" ? "active" : ""}>
+          Historial
+        </Link>
       </nav>
 
       <div className="header-right">
