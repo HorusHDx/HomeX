@@ -68,19 +68,19 @@ export default function WatchPage({ params }: Props) {
       .then((data) => setEpisodes(data.episodes || []))
       .catch(() => {});
     getDetail("tv", params.id)
-      .then((data) => setDetailData({ title: data.name || data.title || "", poster: data.poster_path }))
+      .then((data) => setDetailData({ title: data.name || data.title || "", poster: data.poster_path || null }))
       .catch(() => {});
   }, [params.type, params.id, season]);
 
   useEffect(() => {
-    if (params.type === "tv" && servers.length > 0) {
+    if (params.type === "tv" && detailData) {
       markWatched(
-        { id: Number(params.id), media: "tv", title: detailData?.title || params.id, poster: detailData?.poster || null },
+        { id: Number(params.id), media: "tv", title: detailData.title, poster: detailData.poster },
         season,
         episode
       );
     }
-  }, [params.type, params.id, season, episode, servers.length, detailData]);
+  }, [params.type, params.id, season, episode, detailData]);
 
   const toggleFull = async () => {
     const el = frameRef.current;

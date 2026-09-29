@@ -11,7 +11,8 @@ export default function ContinueWatching() {
   const [entries, setEntries] = useState<ContinueEntry[]>([]);
 
   useEffect(() => {
-    setEntries(getContinue());
+    const items = getContinue();
+    setEntries(items.filter((e) => e.title && e.poster));
   }, []);
 
   if (entries.length === 0) return null;
