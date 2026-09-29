@@ -18,24 +18,11 @@ export default function Card({ item, showLabel = true, badge, href }: CardProps)
 
   return (
     <Link href={destination} className="card" title={title}>
-      {item.poster_path ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imgUrl(item.poster_path, "w500")!}
-          alt={title}
-          loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = FALLBACK_POSTER;
-          }}
-        />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={FALLBACK_POSTER}
-          alt={title}
-          loading="lazy"
-        />
-      )}
+      <img
+        src={item.poster_path ? imgUrl(item.poster_path, "w500")! : FALLBACK_POSTER}
+        alt={title}
+        loading="lazy"
+      />
 
       {badge && <span className="card-badge">{badge}</span>}
 
