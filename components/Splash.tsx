@@ -28,10 +28,13 @@ export default function Splash() {
 
   return (
     <div className={`splash${phase === "out" ? " out" : ""}`} aria-hidden="true">
-      <span className="logo">
-        <b>HOME</b>
-        <i>X</i>
-      </span>
+      <div className="splash-inner">
+        <span className="logo">
+          <b>HOME</b>
+          <i>X</i>
+        </span>
+        <div className="splash-bar" aria-hidden="true"><span /></div>
+      </div>
     </div>
   );
 }

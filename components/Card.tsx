@@ -24,6 +24,7 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
   const title = item.title || item.name || "";
   const year = (item.release_date || item.first_air_date || "").slice(0, 4);
   const kind = type === "movie" ? "Película" : "Serie";
+  const scoreCls = item.vote_average >= 7 ? "tile-score good" : item.vote_average >= 5.5 ? "tile-score mid" : "tile-score";
 
   return (
     <Link
@@ -40,10 +41,11 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
           src={item.poster_path ? imgUrl(item.poster_path, "w500")! : FALLBACK_POSTER}
           alt={title}
           loading="lazy"
+          decoding="async"
         />
         {badge && <span className="tile-badge">{badge}</span>}
         {variant !== "top" && item.vote_average > 0 && (
-          <span className="tile-score">{item.vote_average.toFixed(1)}</span>
+          <span className={scoreCls} style={{ color: item.vote_average >= 7 ? "#7ee2a8" : item.vote_average >= 5.5 ? "#ffd76a" : "#fff" }}>{item.vote_average.toFixed(1)}</span>
         )}
         <div className="pop">
           <strong>{title}</strong>

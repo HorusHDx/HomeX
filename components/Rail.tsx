@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Card, { CardSkeleton } from "./Card";
 import { TMDBItem } from "@/lib/tmdb";
 
@@ -32,8 +32,23 @@ export default function Rail({
   variant = "poster",
 }: RailProps) {
   const track = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
   const isTop = variant === "top";
   const list = (items ?? []).filter((i) => !isTop || i.poster_path).slice(0, isTop ? 10 : undefined);
+
+  const updateEdges = () => {
+    const el = track.current;
+    if (!el) return;
+    setAtStart(el.scrollLeft <= 8);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
+  };
+
+  useEffect(() => {
+    updateEdges();
+    window.addEventListener("resize", updateEdges);
+    return () => window.removeEventListener("resize", updateEdges);
+  }, [list.length]);
 
   const scroll = (dir: number) => {
     const el = track.current;
@@ -41,7 +56,7 @@ export default function Rail({
   };
 
   return (
-    <section className="rail">
+    <section className={`rail${atStart ? " at-start" : ""}${atEnd ? " at-end" : ""}`}>
       <div className="rail-head">
         <h2>{title}</h2>
         {hint && <span>{hint}</span>}
@@ -56,7 +71,7 @@ export default function Rail({
         <Chevron dir="r" />
       </button>
 
-      <div className="rail-track" ref={track}>
+      <div className="rail-track" ref={track} onScroll={updateEdges}>
         {loading && !list.length
           ? Array.from({ length: count }, (_, i) => <CardSkeleton key={i} />)
           : list.map((item, i) => {

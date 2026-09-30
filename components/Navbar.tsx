@@ -50,14 +50,23 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [term, setTerm] = useState("");
   const [open, setOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const lastY = useRef(0);
 
   const solid = scrolled || pathname !== "/";
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 40);
+      // Oculta al bajar, muestra al subir (cinemático)
+      if (y > 300 && y > lastY.current + 4) setHidden(true);
+      else if (y < lastY.current - 4 || y < 300) setHidden(false);
+      lastY.current = y;
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -97,7 +106,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`header${solid ? " solid" : ""}`}>
+      <header className={`header${solid ? " solid" : ""}${hidden ? " hide" : ""}`}>
         <Link href="/" className="logo" aria-label="HomeX — inicio">
           <b>HOME</b>
           <i>X</i>

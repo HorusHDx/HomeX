@@ -8,6 +8,13 @@ import { genreNames } from "@/lib/genres";
 const GLOWS = ["#1e3a5f", "#3b4a63", "#28405f", "#2f4468", "#3a5580", "#334157"];
 const backdrop = (path: string) => `https://image.tmdb.org/t/p/w780${path}`;
 
+function scoreClass(v: number): string {
+  if (v >= 7) return "score good";
+  if (v >= 5.5) return "score mid";
+  if (v > 0) return "score low";
+  return "score";
+}
+
 export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
   const slides = items.filter((i) => i.backdrop_path).slice(0, 6);
   const count = slides.length;
@@ -67,12 +74,20 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
             </div>
             <div className="slide-copy">
               <div className="slide-kind">
-                {[type === "movie" ? "Película" : "Serie", ...genres].join(", ")}
+                <span className="dot" aria-hidden="true" />
+                {i === 0 ? "Nº 1 en tendencia" : `Destacado #${i + 1}`} · {type === "movie" ? "Película" : "Serie"}
               </div>
               <h1 className="slide-title">{title}</h1>
               <div className="slide-meta">
-                {item.vote_average > 0 && <span className="score">★ {item.vote_average.toFixed(1)}</span>}
-                {year && <span>{year}</span>}
+                {item.vote_average > 0 && (
+                  <span className="meta-pill">
+                    <span className={scoreClass(item.vote_average)}>★ {item.vote_average.toFixed(1)}</span>
+                  </span>
+                )}
+                {year && <span className="meta-pill">{year}</span>}
+                {genres.map((g) => (
+                  <span key={g} className="meta-pill">{g}</span>
+                ))}
               </div>
               <p className="slide-desc">{item.overview}</p>
               <div className="slide-actions">
