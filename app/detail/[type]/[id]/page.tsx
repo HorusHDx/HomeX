@@ -1,16 +1,30 @@
-import { getDetail, getRecommendations, getSeason, imgUrl, MediaType, TMDBEpisode } from "@/lib/tmdb";
+import { getDetail, getRecommendations, imgUrl, type MediaType } from "@/lib/tmdb";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import SeasonClient from "./SeasonClient";
 import Card from "@/components/Card";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 interface Props {
   params: { type: MediaType; id: string };
 }
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (params.type !== "movie" && params.type !== "tv") return { title: "No encontrado" };
+  const detail = await getDetail(params.type, params.id).catch(() => null);
+  if (!detail) return { title: "No encontrado" };
+  const title = detail.title || detail.name || "Detalle";
+  return {
+    title: `${title} | HomeX`,
+    description: detail.overview?.slice(0, 160) || "Ver online en HomeX",
+  };
+}
+
 export default async function DetailPage({ params }: Props) {
+  if (params.type !== "movie" && params.type !== "tv") notFound();
+
   const detail = await getDetail(params.type, params.id).catch(() => null);
   if (!detail) notFound();
 
@@ -25,7 +39,14 @@ export default async function DetailPage({ params }: Props) {
       {detail.backdrop_path && (
         <div className="title-backdrop">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imgUrl(detail.backdrop_path, "original")!} alt={title} />
+          <img
+            src={imgUrl(detail.backdrop_path, "original")!}
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
         </div>
       )}
 
@@ -37,6 +58,8 @@ export default async function DetailPage({ params }: Props) {
               src={imgUrl(detail.poster_path, "w500")!}
               alt={title}
               className="title-poster"
+              loading="eager"
+              decoding="async"
             />
           )}
           <div className="title-info">
@@ -44,10 +67,10 @@ export default async function DetailPage({ params }: Props) {
             <div className="title-meta">
               <span className="score">★ {detail.vote_average.toFixed(1)}</span>
               {year && <span>{year}</span>}
-              {detail.runtime && <span>{detail.runtime} min</span>}
-              {detail.number_of_seasons && (
+              {detail.runtime ? <span>{detail.runtime} min</span> : null}
+              {detail.number_of_seasons ? (
                 <span>{detail.number_of_seasons} temporadas</span>
-              )}
+              ) : null}
             </div>
             {detail.genres && (
               <div className="title-genres">
@@ -56,7 +79,7 @@ export default async function DetailPage({ params }: Props) {
                 ))}
               </div>
             )}
-            <p className="title-overview">{detail.overview}</p>
+            <p className="title-overview">{detail.overview || "Sin sinopsis disponible."}</p>
             <div className="title-actions">
               <Link
                 href={`/watch/${params.type}/${params.id}`}

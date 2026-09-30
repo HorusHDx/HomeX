@@ -6,7 +6,7 @@ import { TMDBItem } from "@/lib/tmdb";
 import { genreNames } from "@/lib/genres";
 
 const GLOWS = ["#1e3a5f", "#3b4a63", "#28405f", "#2f4468", "#3a5580", "#334157"];
-const backdrop = (path: string) => `https://image.tmdb.org/t/p/w1280${path}`;
+const backdrop = (path: string) => `https://image.tmdb.org/t/p/w780${path}`;
 
 export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
   const slides = items.filter((i) => i.backdrop_path).slice(0, 6);
@@ -15,6 +15,13 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
   const [paused, setPaused] = useState(false);
 
   const next = useCallback(() => setCur((c) => (c + 1) % Math.max(count, 1)), [count]);
+
+  // Autoplay con pausa en hover
+  useEffect(() => {
+    if (paused || count <= 1) return;
+    const t = setTimeout(next, 7000);
+    return () => clearTimeout(t);
+  }, [cur, paused, count, next]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -55,6 +62,7 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
                 alt=""
                 loading={i === 0 ? "eager" : "lazy"}
                 fetchPriority={i === 0 ? "high" : "auto"}
+                decoding="async"
               />
             </div>
             <div className="slide-copy">

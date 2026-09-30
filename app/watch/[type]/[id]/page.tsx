@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ScrapedServer, getMovieEmbedUrl, getTvEmbedUrl } from "@/lib/unlimplay";
+import { ScrapedServer } from "@/lib/unlimplay";
 import { markWatched } from "@/lib/continue";
-import { getDetail, getSeason, TMDBEpisode } from "@/lib/tmdb";
+import { getDetailClient, getSeasonClient } from "@/lib/tmdb-client";
+import type { TMDBEpisode } from "@/lib/tmdb";
 
 interface Props {
   params: { type: "movie" | "tv"; id: string };
@@ -29,11 +30,11 @@ const LANG_LABELS: Record<string, string> = {
   original: "Audio Original",
 };
 
-export default function WatchPage({ params }: Props) {
+function WatchInner({ params }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const season = parseInt(searchParams.get("season") || "1");
-  const episode = parseInt(searchParams.get("episode") || "1");
+  const season = Math.max(1, parseInt(searchParams.get("season") || "1", 10) || 1);
+  const episode = Math.max(1, parseInt(searchParams.get("episode") || "1", 10) || 1);
 
   const [servers, setServers] = useState<ScrapedServer[]>([]);
   const [activeServer, setActiveServer] = useState<ScrapedServer | null>(null);
@@ -43,39 +44,51 @@ export default function WatchPage({ params }: Props) {
   const [detailData, setDetailData] = useState<{ title: string; poster: string | null } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
-  const embedUrl =
-    params.type === "movie"
-      ? getMovieEmbedUrl(params.id)
-      : getTvEmbedUrl(params.id, season, episode);
-
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setActiveServer(null);
-    fetch(`/api/servers?type=${params.type}&id=${params.id}&season=${season}&episode=${episode}`)
+    fetch(`/api/servers?type=${params.type}&id=${encodeURIComponent(params.id)}&season=${season}&episode=${episode}`)
       .then((r) => r.json())
       .then((data) => {
+        if (cancelled) return;
         const srv = data.servers || [];
         setServers(srv);
         setActiveServer(srv[0] || null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [params.type, params.id, season, episode]);
 
   useEffect(() => {
-    if (params.type !== "tv") return;
-    getSeason(params.id, season)
-      .then((data) => setEpisodes(data.episodes || []))
+    let cancelled = false;
+    // Vía proxy /api/tmdb para no exponer la key
+    getDetailClient(params.type, params.id)
+      .then((data) => {
+        if (!cancelled) setDetailData({ title: data.name || data.title || "", poster: data.poster_path || null });
+      })
       .catch(() => {});
-    getDetail("tv", params.id)
-      .then((data) => setDetailData({ title: data.name || data.title || "", poster: data.poster_path || null }))
-      .catch(() => {});
+    if (params.type === "tv") {
+      getSeasonClient(params.id, season)
+        .then((data) => {
+          if (!cancelled) setEpisodes(data.episodes || []);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
   }, [params.type, params.id, season]);
 
   useEffect(() => {
-    if (params.type === "tv" && detailData) {
+    if (detailData?.title) {
       markWatched(
-        { id: Number(params.id), media: "tv", title: detailData.title, poster: detailData.poster },
+        { id: Number(params.id), media: params.type, title: detailData.title, poster: detailData.poster },
         season,
         episode
       );
@@ -143,8 +156,8 @@ export default function WatchPage({ params }: Props) {
         <div className="watch-title">
           <h1>
             {params.type === "movie"
-              ? "Película"
-              : `T${season} E${episode}`}
+              ? detailData?.title || "Película"
+              : `${detailData?.title || ""} · T${season} E${episode}`}
           </h1>
         </div>
         <button className="watch-fullbtn" onClick={toggleFull}>
@@ -174,6 +187,7 @@ export default function WatchPage({ params }: Props) {
             src={activeServer.url}
             title="Video"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
             referrerPolicy="strict-origin-when-cross-origin"
           />
         )}
@@ -207,7 +221,7 @@ export default function WatchPage({ params }: Props) {
           <div className="watch-audio-list">
             {group.items.map((s, i) => (
               <button
-                key={i}
+                key={`${s.url}-${i}`}
                 className={`watch-server${activeServer?.url === s.url ? " on" : ""}`}
                 onClick={() => setActiveServer(s)}
               >
@@ -224,7 +238,7 @@ export default function WatchPage({ params }: Props) {
           <div className="watch-audio-list">
             {ungrouped.map((s, i) => (
               <button
-                key={i}
+                key={`${s.url}-${i}`}
                 className={`watch-server${activeServer?.url === s.url ? " on" : ""}`}
                 onClick={() => setActiveServer(s)}
               >
@@ -235,5 +249,22 @@ export default function WatchPage({ params }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+export default function WatchPage({ params }: Props) {
+  if (params.type !== "movie" && params.type !== "tv") {
+    return (
+      <div className="state">
+        <h3>Tipo no válido</h3>
+        <p>La URL solicitada no existe.</p>
+        <Link href="/" className="btn btn-primary">Volver al inicio</Link>
+      </div>
+    );
+  }
+  return (
+    <Suspense fallback={<div className="watch-loading"><div className="skeleton" style={{ width: "60%", height: 28 }} /></div>}>
+      <WatchInner params={params} />
+    </Suspense>
   );
 }

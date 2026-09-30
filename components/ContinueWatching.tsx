@@ -17,6 +17,14 @@ export default function ContinueWatching() {
 
   if (entries.length === 0) return null;
 
+  const hrefFor = (entry: ContinueEntry) =>
+    entry.media === "movie"
+      ? `/watch/movie/${entry.id}`
+      : `/watch/tv/${entry.id}?season=${entry.season}&episode=${entry.episode}`;
+
+  const badgeFor = (entry: ContinueEntry) =>
+    entry.media === "movie" ? "Película" : `T${entry.season} E${entry.episode}`;
+
   return (
     <section className="rail">
       <div className="rail-head">
@@ -26,8 +34,8 @@ export default function ContinueWatching() {
       <div className="rail-track">
         {entries.map((entry) => (
           <Link
-            key={entry.id}
-            href={`/watch/tv/${entry.id}?season=${entry.season}&episode=${entry.episode}`}
+            key={`${entry.media}-${entry.id}`}
+            href={hrefFor(entry)}
             className="tile wide"
             title={entry.title}
           >
@@ -36,11 +44,12 @@ export default function ContinueWatching() {
                 src={entry.poster ? imgUrl(entry.poster, "w500")! : FALLBACK_POSTER}
                 alt={entry.title}
                 loading="lazy"
+                decoding="async"
               />
-              <span className="tile-badge">T{entry.season} E{entry.episode}</span>
+              <span className="tile-badge">{badgeFor(entry)}</span>
               <div className="pop">
                 <strong>{entry.title}</strong>
-                <small>T{entry.season} E{entry.episode}</small>
+                <small>{badgeFor(entry)}</small>
               </div>
             </div>
           </Link>

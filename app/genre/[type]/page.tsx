@@ -1,17 +1,22 @@
-import { getPopular, getTopRated, MediaType } from "@/lib/tmdb";
+import { getPopular, getTopRated, type MediaType } from "@/lib/tmdb";
 import Rail from "@/components/Rail";
+import { notFound } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const TITLES: Record<MediaType, string> = {
   movie: "Películas",
   tv: "Series",
 };
 
+const EMPTY = { page: 1, results: [], total_pages: 0, total_results: 0 };
+
 export default async function GenrePage({ params }: { params: { type: MediaType } }) {
+  if (params.type !== "movie" && params.type !== "tv") notFound();
+
   const [popular, topRated] = await Promise.all([
-    getPopular(params.type),
-    getTopRated(params.type),
+    getPopular(params.type).catch(() => EMPTY),
+    getTopRated(params.type).catch(() => EMPTY),
   ]);
 
   return (

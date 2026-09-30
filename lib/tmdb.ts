@@ -50,8 +50,13 @@ export interface TMDBEpisode {
 }
 
 const fetchTMDB = async <T>(path: string, params: Record<string, string> = {}): Promise<T> => {
+  if (!API_KEY) throw new Error("TMDB_API_KEY no configurada");
+  // Solo servidor: evita llamar TMDB directo desde el cliente (expondría la key)
+  if (typeof window !== "undefined") {
+    throw new Error("Usa /api/tmdb desde el cliente");
+  }
   const url = new URL(`${BASE_URL}${path}`);
-  url.searchParams.set("api_key", API_KEY || "");
+  url.searchParams.set("api_key", API_KEY);
   url.searchParams.set("language", "es-ES");
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 

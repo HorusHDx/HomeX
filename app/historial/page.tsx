@@ -21,10 +21,18 @@ export default function HistorialPage() {
     }
   };
 
-  const handleRemove = (id: number) => {
+  const handleRemove = (id: number, media: string) => {
     clearContinue(id);
     setEntries(getContinue());
   };
+
+  const hrefFor = (entry: ContinueEntry) =>
+    entry.media === "movie"
+      ? `/watch/movie/${entry.id}`
+      : `/watch/tv/${entry.id}?season=${entry.season}&episode=${entry.episode}`;
+
+  const badgeFor = (entry: ContinueEntry) =>
+    entry.media === "movie" ? "Película" : `T${entry.season} E${entry.episode}`;
 
   return (
     <div className="page">
@@ -61,9 +69,9 @@ export default function HistorialPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {entries.map((entry) => (
-            <div key={entry.id} className="group relative">
+            <div key={`${entry.media}-${entry.id}`} className="group relative">
               <Link
-                href={`/watch/tv/${entry.id}?season=${entry.season}&episode=${entry.episode}`}
+                href={hrefFor(entry)}
                 className="card"
               >
                 {entry.poster ? (
@@ -76,14 +84,14 @@ export default function HistorialPage() {
                 ) : (
                   <div className="skeleton ratio" />
                 )}
-                <span className="card-badge">T{entry.season} E{entry.episode}</span>
+                <span className="card-badge">{badgeFor(entry)}</span>
                 <span className="card-label">
                   {entry.title}
-                  <small>T{entry.season} E{entry.episode}</small>
+                  <small>{badgeFor(entry)}</small>
                 </span>
               </Link>
               <button
-                onClick={() => handleRemove(entry.id)}
+                onClick={() => handleRemove(entry.id, entry.media)}
                 className="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur transition group-hover:opacity-100 hover:bg-brand"
                 aria-label={`Eliminar ${entry.title}`}
               >
