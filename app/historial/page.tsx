@@ -76,10 +76,12 @@ export default function HistorialPage() {
                 className="card"
               >
                 {entry.poster ? (
-                  <PosterImg
-                    src={imgUrl(entry.poster, "w500")!}
-                    alt={entry.title}
-                  />
+                  <div className="poster">
+                    <PosterImg
+                      src={imgUrl(entry.poster, "w342")!}
+                      alt={entry.title}
+                    />
+                  </div>
                 ) : (
                   <div className="skeleton ratio" />
                 )}

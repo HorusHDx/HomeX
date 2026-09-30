@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export const FALLBACK_POSTER =
@@ -7,47 +8,50 @@ export const FALLBACK_POSTER =
 
 interface Props {
   src: string | null;
-  srcSet?: string;
-  sizes?: string;
   alt: string;
   eager?: boolean;
+  sizes?: string;
   className?: string;
 }
 
-const STALL_TIMEOUT = 10000;
-
-/** Póster con fallback ante error, fundido al cargar y reintento si se queda colgado. */
-export default function PosterImg({ src, srcSet, sizes, alt, eager = false, className }: Props) {
+/**
+ * Póster servido por la optimización de imágenes de Next/Vercel
+ * (caché en el edge, formato moderno, mismo origen).
+ * Debe vivir dentro de un contenedor con posición relativa y tamaño
+ * (p. ej. `.poster`). Con fallback ante error y fundido al cargar.
+ */
+export default function PosterImg({
+  src,
+  alt,
+  eager = false,
+  sizes = "(max-width: 640px) 40vw, 186px",
+  className,
+}: Props) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [retry, setRetry] = useState(0);
-  const showFallback = failed || !src;
-
-  // Si la petición se queda colgada (ni load ni error), remontar fuerza reintento
-  useEffect(() => {
-    if (showFallback || loaded || eager) return;
-    const t = setTimeout(() => setRetry((r) => (r < 1 ? r + 1 : r)), STALL_TIMEOUT);
-    return () => clearTimeout(t);
-  }, [showFallback, loaded, eager, retry]);
 
   useEffect(() => {
     setFailed(false);
     setLoaded(false);
   }, [src]);
 
+  if (failed || !src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={FALLBACK_POSTER} alt={alt} draggable={false} className={className} />
+    );
+  }
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      key={retry}
-      src={showFallback ? FALLBACK_POSTER : src}
-      srcSet={showFallback ? undefined : srcSet}
-      sizes={showFallback ? undefined : sizes}
+    <Image
+      src={src}
       alt={alt}
-      loading={showFallback || eager ? "eager" : "lazy"}
-      decoding="async"
+      fill
+      sizes={sizes}
+      priority={eager}
       draggable={false}
       className={className}
-      style={{ opacity: loaded || showFallback ? 1 : 0 }}
+      style={{ opacity: loaded ? 1 : 0, objectFit: "cover" }}
       onLoad={() => setLoaded(true)}
       onError={() => setFailed(true)}
     />

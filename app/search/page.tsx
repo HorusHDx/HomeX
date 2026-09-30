@@ -54,11 +54,13 @@ function SearchResults() {
             className="card"
           >
             {item.poster_path ? (
-              <PosterImg
-                src={imgUrl(item.poster_path, "w500")!}
-                alt={item.title || item.name || ""}
-                eager={i < 6}
-              />
+              <div className="poster">
+                <PosterImg
+                  src={imgUrl(item.poster_path, "w342")!}
+                  alt={item.title || item.name || ""}
+                  eager={i < 6}
+                />
+              </div>
             ) : (
               <div className="skeleton ratio" />
             )}

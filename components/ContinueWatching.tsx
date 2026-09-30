@@ -40,7 +40,7 @@ export default function ContinueWatching() {
           >
             <div className="poster">
               <PosterImg
-                src={entry.poster ? imgUrl(entry.poster, "w500")! : null}
+                src={entry.poster ? imgUrl(entry.poster, "w342")! : null}
                 alt={entry.title}
                 eager
               />
