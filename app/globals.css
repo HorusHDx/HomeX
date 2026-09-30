@@ -78,15 +78,14 @@ input { font: inherit; }
 }
 
 /* ---------- logo ---------- */
-.logo { display: inline-flex; align-items: center; font-weight: 900; letter-spacing: -0.04em; font-size: 1.35rem; line-height: 1; }
+.logo { display: inline-flex; align-items: center; font-weight: 900; letter-spacing: -0.04em; font-size: 1.35rem; line-height: 1; transition: transform 0.3s var(--ease-out), filter 0.3s; }
 .logo b { background: #fff; color: #000; padding: 0.28em 0.42em 0.3em; border-radius: 7px 0 0 7px; box-shadow: 0 2px 14px rgba(255,255,255,0.25); }
 .logo i {
   font-style: normal; color: #fff; background: linear-gradient(180deg, var(--bg-4), var(--bg-3));
   padding: 0.28em 0.42em 0.3em; border-radius: 0 7px 7px 0;
   border: 1px solid var(--line); border-left: 0; font-weight: 900;
-  transition: box-shadow 0.3s, transform 0.3s var(--ease-out);
 }
-.logo:hover i { box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 4px 20px rgba(0,0,0,0.5); transform: translateY(-1px); }
+.logo:hover { transform: translateY(-1px); filter: brightness(1.1); }
 
 /* ---------- header ---------- */
 .header {
