@@ -236,6 +236,8 @@ input { font: inherit; }
 
 /* ---------- rails ---------- */
 .rails { position: relative; z-index: 4; margin-top: -3.5rem; padding-bottom: 4rem; }
+/* En páginas sin hero (género, anime) no debe solaparse con el subtítulo */
+.page .rails { margin-top: 0; }
 .rail { position: relative; margin-bottom: 0.8rem; }
 .rail-head { display: flex; align-items: baseline; gap: 0.9rem; padding: 0 var(--pad); margin-bottom: 0.35rem; }
 .rail-head h2 {
@@ -260,14 +262,14 @@ input { font: inherit; }
 .rail-fade.r { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
 .rail.at-start .rail-fade.l, .rail.at-end .rail-fade.r { opacity: 0; }
 .rail-arr {
-  position: absolute; top: 50%; z-index: 8; width: 46px; height: 46px; margin-top: -1rem; border-radius: 50%;
+  position: absolute; top: 50%; z-index: 30; width: 46px; height: 46px; margin-top: -1rem; border-radius: 50%;
   background: rgba(11,18,32,0.85); border: 1px solid var(--line); display: grid; place-items: center;
   backdrop-filter: blur(10px);
-  opacity: 0; transform: translateY(4px) scale(0.92);
-  transition: opacity 0.3s var(--ease-out), transform 0.35s var(--ease-spring), background 0.2s, color 0.2s;
+  opacity: 0; visibility: hidden; transform: translateY(4px) scale(0.92);
+  transition: opacity 0.3s var(--ease-out), transform 0.35s var(--ease-spring), background 0.2s, color 0.2s, visibility 0s 0.35s;
 }
 .rail-arr.l { left: 0.7rem; } .rail-arr.r { right: 0.7rem; }
-.rail:hover .rail-arr { opacity: 1; transform: none; }
+.rail:hover .rail-arr, .rail:focus-within .rail-arr { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 .rail-arr:hover { background: #fff; color: #000; }
 
 /* ---------- tile (tarjetas) ---------- */
