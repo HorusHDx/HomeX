@@ -188,7 +188,7 @@ function WatchInner({ params }: Props) {
             title="Video"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
+            referrerPolicy="no-referrer"
           />
         )}
       </div>
