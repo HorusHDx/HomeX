@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <i>X</i>
           </span>
           <span>
-            HomeX no aloja ningún video. Todo el contenido es proporcionado por terceros no afiliados. Datos e imágenes de TMDB, sin aval de TMDB.
+            HomeX no aloja ningún video. Todo el contenido es proporcionado por terceros no afiliados. Datos e imágenes de TMDB.
           </span>
         </footer>
       </body>
