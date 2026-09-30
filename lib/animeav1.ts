@@ -102,6 +102,51 @@ export async function getAnime2Catalog(page = 1): Promise<Anime2Item[]> {
   return parseCards(html);
 }
 
+export async function getAnime2Popular(): Promise<Anime2Item[]> {
+  const { html } = await fetchHtml("/catalogo?order=popular");
+  if (!html) return [];
+  return parseCards(html);
+}
+
+export interface Anime2RecentEpisode {
+  slug: string;
+  episode: number;
+  title: string;
+  cover: string | null;
+  time: string | null;
+}
+
+// Episodios recién actualizados (home de AnimeAV1)
+export async function getAnime2RecentEpisodes(): Promise<Anime2RecentEpisode[]> {
+  const { html } = await fetchHtml("/");
+  if (!html) return [];
+  const out: Anime2RecentEpisode[] = [];
+  const seen = new Set<string>();
+  const articles = html.match(/<article[\s\S]*?<\/article>/gi) || [];
+  for (const a of articles) {
+    const link = a.match(/href="\/media\/([a-z0-9-]+)\/(\d+)"/i);
+    if (!link) continue;
+    const key = `${link[1]}/${link[2]}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const cover = a.match(/src="(https:\/\/cdn\.animeav1\.com\/(?:covers|thumbnails)\/[^"]+)"/i)?.[1] || null;
+    const title =
+      clean(a.match(/<span class="sr-only">Ver ([\s\S]*?)<\/span>/i)?.[1] || "").replace(/\s+\d+$/, "") ||
+      clean(a.match(/<div class="[^"]*text-subs[^"]*">([^<]+)<\/div>/i)?.[1] || "");
+    const time = clean(a.match(/((?:hace|Hace)\s[^<]{1,25})/)?.[1] || "") || null;
+    out.push({ slug: link[1], episode: parseInt(link[2], 10), title, cover, time });
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+
+// Animes recién agregados (home de AnimeAV1)
+export async function getAnime2RecentAdded(): Promise<Anime2Item[]> {
+  const { html } = await fetchHtml("/");
+  if (!html) return [];
+  return parseCards(html).slice(0, 20);
+}
+
 // ---- ficha (HTML) ----
 
 const isValidSlug = (s: string) => /^[a-z0-9-]{2,120}$/.test(s);

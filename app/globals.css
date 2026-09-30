@@ -385,6 +385,7 @@ input { font: inherit; }
 }
 .card:hover .card-label { opacity: 1; transform: none; }
 .card-label small { display: block; color: var(--fg-dim); font-weight: 500; font-size: 0.74rem; margin-top: 0.15rem; }
+.card-label.show { opacity: 1; transform: none; position: static; background: none; padding: 0.55rem 0.1rem 0; }
 @media (hover: none) { .card-label { opacity: 1; transform: none; } }
 
 /* ---------- grid ---------- */
@@ -392,6 +393,9 @@ input { font: inherit; }
 .grid .card, .grid .tile { width: 100%; }
 .grid .card-label { opacity: 1; transform: none; position: static; background: none; padding: 0.55rem 0.1rem 0; }
 .grid .tile:hover .poster { transform: translateY(-6px); }
+
+/* ---------- póster apaisado (episodios recientes Anime2) ---------- */
+.poster.landscape { aspect-ratio: 16 / 9; }
 
 /* ---------- estados ---------- */
 .skeleton {

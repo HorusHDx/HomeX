@@ -1,102 +1,92 @@
-"use client";
-
-import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import type { Anime2Item } from "@/lib/animeav1";
+import { getAnime2RecentEpisodes, getAnime2RecentAdded, getAnime2Popular } from "@/lib/animeav1";
 import PosterImg from "@/components/PosterImg";
+import Anime2Search from "./Anime2Search";
 
-function Anime2Browser() {
-  const [term, setTerm] = useState("");
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Anime2Item[]>([]);
-  const [loading, setLoading] = useState(true);
+export const revalidate = 1800;
 
-  const run = useCallback((q: string) => {
-    setLoading(true);
-    fetch(`/api/anime2/search${q ? `?q=${encodeURIComponent(q)}` : ""}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setResults(data.results || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+const EMPTY: { slug: string; title: string; cover: string | null }[] = [];
 
-  useEffect(() => {
-    run("");
-  }, [run]);
-
-  // debounce del buscador propio
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (query !== term) {
-        setQuery(term);
-        run(term.trim());
-      }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [term, query, run]);
+export default async function Anime2Page() {
+  const [recentEps, recentAdded, popular] = await Promise.all([
+    getAnime2RecentEpisodes().catch(() => []),
+    getAnime2RecentAdded().catch(() => EMPTY),
+    getAnime2Popular().catch(() => EMPTY),
+  ]);
 
   return (
     <div className="page">
       <h1 className="section-title">Anime2</h1>
-      <p className="section-sub">Segundo servidor · AnimeAV1 · subtitulado y doblado</p>
 
-      <form
-        className="search open"
-        style={{ width: "min(420px, 100%)", marginBottom: "1.6rem" }}
-        onSubmit={(e) => {
-          e.preventDefault();
-          setQuery(term);
-          run(term.trim());
-        }}
-        role="search"
-      >
-        <span className="search-btn" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </span>
-        <input
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          placeholder="Buscar anime…"
-          aria-label="Buscar anime en Anime2"
-        />
-      </form>
+      <div style={{ marginTop: "1.4rem" }}>
+        <Anime2Search />
+      </div>
 
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 12 }, (_, i) => (
-            <div key={i} className="skeleton ratio" />
-          ))}
-        </div>
-      ) : results.length === 0 ? (
-        <div className="state">
-          <h3>Sin resultados</h3>
-          <p>No se encontró nada para "{query}"</p>
-        </div>
-      ) : (
-        <div className="grid">
-          {results.map((item, i) => (
-            <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
-              <div className="poster">
-                <PosterImg src={item.cover} alt={item.title} eager={i < 6} />
-              </div>
-              <span className="card-label">{item.title}</span>
-            </Link>
-          ))}
-        </div>
+      {recentEps.length > 0 && (
+        <section className="rail">
+          <div className="rail-head">
+            <h2>Episodios recientes</h2>
+            <span>Últimas actualizaciones</span>
+          </div>
+          <div className="rail-track">
+            {recentEps.map((ep, i) => (
+              <Link
+                key={`${ep.slug}-${ep.episode}`}
+                href={`/anime2/${ep.slug}/${ep.episode}`}
+                className="card"
+                style={{ width: "clamp(200px, 20vw, 280px)" }}
+              >
+                <div className="poster landscape">
+                  <PosterImg src={ep.cover} alt={ep.title} eager={i < 4} />
+                </div>
+                <span className="card-badge">E{ep.episode}</span>
+                <span className="card-label show">
+                  {ep.title}
+                  {ep.time && <small>{ep.time}</small>}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {popular.length > 0 && (
+        <section className="rail">
+          <div className="rail-head">
+            <h2>Populares</h2>
+            <span>Lo más visto</span>
+          </div>
+          <div className="rail-track">
+            {popular.slice(0, 20).map((item, i) => (
+              <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+                <div className="poster">
+                  <PosterImg src={item.cover} alt={item.title} eager={i < 4} />
+                </div>
+                <span className="card-label">{item.title}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recentAdded.length > 0 && (
+        <section className="rail">
+          <div className="rail-head">
+            <h2>Recién agregados</h2>
+            <span>Novedades del catálogo</span>
+          </div>
+          <div className="rail-track">
+            {recentAdded.map((item, i) => (
+              <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+                <div className="poster">
+                  <PosterImg src={item.cover} alt={item.title} />
+                </div>
+                <span className="card-label">{item.title}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
     </div>
-  );
-}
-
-export default function Anime2Page() {
-  return (
-    <Suspense>
-      <Anime2Browser />
-    </Suspense>
   );
 }
