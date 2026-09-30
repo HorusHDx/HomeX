@@ -40,6 +40,17 @@ const LINKS = [
     icon: <path d="M13 2 4 14h6l-1 8 9-12h-6z" />,
   },
   {
+    href: "/anime2",
+    label: "Anime2",
+    active: (p: string) => p.startsWith("/anime2"),
+    icon: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="3" />
+        <path d="M10.5 9.5v5l4.5-2.5z" fill="currentColor" stroke="none" />
+      </>
+    ),
+  },
+  {
     href: "/historial",
     label: "Historial",
     active: (p: string) => p === "/historial",
