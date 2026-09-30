@@ -84,6 +84,7 @@ export default function Rail({
                   href={links?.[i] ?? undefined}
                   variant={variant}
                   rank={i + 1}
+                  index={i}
                 />
               );
             })}

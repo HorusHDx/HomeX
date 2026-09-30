@@ -10,6 +10,7 @@ interface CardProps {
   href?: string;
   variant?: "poster" | "top";
   rank?: number;
+  index?: number;
 }
 
 const PlayIcon = () => (
@@ -18,7 +19,7 @@ const PlayIcon = () => (
   </svg>
 );
 
-export default function Card({ item, badge, href, variant = "poster", rank }: CardProps) {
+export default function Card({ item, badge, href, variant = "poster", rank, index = 0 }: CardProps) {
   const type = item.media_type || (item.title ? "movie" : "tv");
   const destination = href || `/detail/${type}/${item.id}`;
   const title = item.title || item.name || "";
@@ -31,6 +32,7 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
       href={destination}
       className={`tile${variant === "top" ? " top" : ""}`}
       title={title}
+      style={{ "--i": Math.min(index, 12) } as React.CSSProperties}
     >
       {variant === "top" && rank != null && (
         <span className="tile-num" aria-hidden="true">{rank}</span>
@@ -45,7 +47,7 @@ export default function Card({ item, badge, href, variant = "poster", rank }: Ca
         />
         {badge && <span className="tile-badge">{badge}</span>}
         {variant !== "top" && item.vote_average > 0 && (
-          <span className={scoreCls} style={{ color: item.vote_average >= 7 ? "#7ee2a8" : item.vote_average >= 5.5 ? "#ffd76a" : "#fff" }}>{item.vote_average.toFixed(1)}</span>
+          <span className={scoreCls}>{item.vote_average.toFixed(1)}</span>
         )}
         <div className="pop">
           <strong>{title}</strong>
