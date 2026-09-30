@@ -94,5 +94,5 @@ export const getGenres = async (type: MediaType) => {
 export const getRecommendations = (type: MediaType, id: number | string) =>
   fetchTMDB<TMDBResponse>(`/${type}/${id}/recommendations`);
 
-export const imgUrl = (path: string | null, size: "w500" | "original" | "w780" = "w500") =>
+export const imgUrl = (path: string | null, size: "w342" | "w500" | "original" | "w780" = "w500") =>
   path ? `${IMG_BASE}/${size}${path}` : null;

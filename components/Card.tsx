@@ -38,7 +38,9 @@ export default function Card({ item, badge, href, variant = "poster", rank, inde
       )}
       <div className="poster">
         <PosterImg
-          src={item.poster_path ? imgUrl(item.poster_path, "w500")! : null}
+          src={item.poster_path ? imgUrl(item.poster_path, "w342")! : null}
+          srcSet={item.poster_path ? `${imgUrl(item.poster_path, "w342")!} 342w, ${imgUrl(item.poster_path, "w500")!} 500w` : undefined}
+          sizes="(max-width: 640px) 40vw, 186px"
           alt={title}
           eager={index < 4}
         />
