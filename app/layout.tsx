@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <i>X</i>
             </span>
             <span>
-              Este producto usa la API de TMDB, pero no está avalado ni certificado por TMDB.
+              HomeX no aloja ningún video. Todo el contenido es proporcionado por terceros no afiliados. Datos e imágenes de TMDB, sin aval de TMDB.
             </span>
           </footer>
         </QuickViewProvider>
