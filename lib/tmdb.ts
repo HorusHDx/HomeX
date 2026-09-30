@@ -106,5 +106,5 @@ export const getAnime = (type: MediaType, sort = "popularity.desc") =>
     ...(sort.startsWith("vote_average") ? { "vote_count.gte": "200" } : {}),
   });
 
-export const imgUrl = (path: string | null, size: "w342" | "w500" | "original" | "w780" = "w500") =>
+export const imgUrl = (path: string | null, size: "w342" | "w500" | "w780" | "w1280" | "original" = "w500") =>
   path ? `${IMG_BASE}/${size}${path}` : null;

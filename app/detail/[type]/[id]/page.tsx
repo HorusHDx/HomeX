@@ -1,4 +1,5 @@
 import { getDetail, getRecommendations, imgUrl, type MediaType } from "@/lib/tmdb";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -38,14 +39,14 @@ export default async function DetailPage({ params }: Props) {
     <div className="relative min-h-screen">
       {detail.backdrop_path && (
         <div className="title-backdrop">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imgUrl(detail.backdrop_path, "original")!}
+          <Image
+            src={imgUrl(detail.backdrop_path, "w1280")!}
             alt=""
             aria-hidden="true"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+            fill
+            sizes="100vw"
+            priority
+            style={{ objectFit: "cover" }}
           />
         </div>
       )}
@@ -53,13 +54,13 @@ export default async function DetailPage({ params }: Props) {
       <div className="title-content">
         <div className="title-grid">
           {detail.poster_path && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={imgUrl(detail.poster_path, "w500")!}
               alt={title}
               className="title-poster"
-              loading="eager"
-              decoding="async"
+              width={500}
+              height={750}
+              priority
             />
           )}
           <div className="title-info">

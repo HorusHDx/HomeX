@@ -1,8 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Splash from "@/components/Splash";
 import QuickViewProvider from "@/components/QuickView";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "HomeX - Streaming",
@@ -18,16 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <head>
-        <link rel="preconnect" href="https://image.tmdb.org" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="es" className={inter.className}>
       <body>
         <Splash />
         <QuickViewProvider>

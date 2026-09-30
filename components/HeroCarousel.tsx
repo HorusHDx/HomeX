@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { TMDBItem } from "@/lib/tmdb";
 import { genreNames } from "@/lib/genres";
@@ -63,13 +64,13 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
         return (
           <article key={`${type}-${item.id}-${i}`} className={`slide${on ? " on" : ""}`} aria-hidden={!on}>
             <div className="slide-art">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={backdrop(item.backdrop_path!)}
                 alt=""
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : "auto"}
-                decoding="async"
+                fill
+                sizes="100vw"
+                priority={i === 0}
+                style={{ objectFit: "cover", objectPosition: "center 20%" }}
               />
             </div>
             <div className="slide-copy">

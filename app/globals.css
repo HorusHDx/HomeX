@@ -44,7 +44,8 @@ body {
     var(--bg);
   background-attachment: fixed;
   color: var(--fg);
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* La fuente Inter la inyecta next/font en <html>; heredar para no romperla */
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
