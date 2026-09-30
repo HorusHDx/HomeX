@@ -8,6 +8,7 @@ import {
 import PosterImg from "@/components/PosterImg";
 import Anime2Search from "./Anime2Search";
 import Anime2Rail from "./Anime2Rail";
+import Anime2ContinueWatching from "@/components/Anime2ContinueWatching";
 
 export const revalidate = 1800;
 
@@ -29,6 +30,8 @@ export default async function Anime2Page() {
       <div style={{ marginTop: "1.4rem" }}>
         <Anime2Search />
       </div>
+
+      <Anime2ContinueWatching />
 
       {recentEps.length > 0 && (
         <Anime2Rail title="Episodios recientes" hint="Últimas actualizaciones">

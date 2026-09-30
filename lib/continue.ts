@@ -75,3 +75,71 @@ export function clearContinue(id: number, media?: string): void {
       : list.filter((e) => e.id !== id)
   );
 }
+
+// ---------- Anime2 (segundo servidor, clave separada) ----------
+
+const KEY_A2 = "homex:continue:anime2:v1";
+
+export interface Anime2Entry {
+  slug: string;
+  title: string;
+  cover: string | null;
+  episode: number;
+  at: number;
+}
+
+function readA2(): Anime2Entry[] {
+  try {
+    if (typeof localStorage === "undefined") return [];
+    const raw = localStorage.getItem(KEY_A2);
+    if (!raw) return [];
+    const list: unknown = JSON.parse(raw);
+    if (!Array.isArray(list)) return [];
+    return list.filter(
+      (e): e is Anime2Entry =>
+        typeof e === "object" &&
+        e !== null &&
+        typeof (e as Anime2Entry).slug === "string" &&
+        typeof (e as Anime2Entry).title === "string" &&
+        Number.isInteger((e as Anime2Entry).episode)
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeA2(list: Anime2Entry[]): void {
+  try {
+    localStorage.setItem(KEY_A2, JSON.stringify(list.slice(0, LIMIT)));
+  } catch {}
+}
+
+export function getAnime2Continue(): Anime2Entry[] {
+  return readA2().sort((a, b) => b.at - a.at);
+}
+
+export function markAnime2Watched(
+  show: { slug: string; title: string; cover: string | null },
+  episode: number
+): void {
+  if (!show.slug || !show.title || !Number.isInteger(episode)) return;
+  const entry: Anime2Entry = {
+    slug: show.slug,
+    title: show.title,
+    cover: show.cover,
+    episode,
+    at: Date.now(),
+  };
+  const rest = readA2().filter((e) => e.slug !== show.slug);
+  writeA2([entry, ...rest]);
+}
+
+export function clearAnime2Continue(slug?: string): void {
+  if (!slug) {
+    try {
+      localStorage.removeItem(KEY_A2);
+    } catch {}
+    return;
+  }
+  writeA2(readA2().filter((e) => e.slug !== slug));
+}

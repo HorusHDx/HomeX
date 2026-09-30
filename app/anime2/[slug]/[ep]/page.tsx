@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Anime2Info, Anime2Server } from "@/lib/animeav1";
+import { markAnime2Watched } from "@/lib/continue";
 
 interface Props {
   params: { slug: string; ep: string };
@@ -20,6 +21,7 @@ export default function Anime2WatchPage({ params }: Props) {
   const [active, setActive] = useState<Anime2Server | null>(null);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState(params.slug);
+  const [cover, setCover] = useState<string | null>(null);
   const [episodes, setEpisodes] = useState<number[]>([]);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function Anime2WatchPage({ params }: Props) {
         setServers(list);
         setActive(list[0] || null);
         if (info?.title) setTitle(info.title);
+        if (info?.cover) setCover(info.cover);
         if (info?.episodes) setEpisodes(info.episodes);
         setLoading(false);
       })
@@ -46,6 +49,12 @@ export default function Anime2WatchPage({ params }: Props) {
       cancelled = true;
     };
   }, [params.slug, ep]);
+
+  useEffect(() => {
+    if (title && title !== params.slug) {
+      markAnime2Watched({ slug: params.slug, title, cover }, ep);
+    }
+  }, [params.slug, title, cover, ep]);
 
   const groups = LANG_ORDER.map((lang) => ({
     lang,
