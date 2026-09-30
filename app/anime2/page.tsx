@@ -1,17 +1,25 @@
 import Link from "next/link";
-import { getAnime2RecentEpisodes, getAnime2RecentAdded, getAnime2Popular } from "@/lib/animeav1";
+import {
+  getAnime2RecentEpisodes,
+  getAnime2RecentAdded,
+  getAnime2Popular,
+  getAnime2ByGenre,
+} from "@/lib/animeav1";
 import PosterImg from "@/components/PosterImg";
 import Anime2Search from "./Anime2Search";
+import Anime2Rail from "./Anime2Rail";
 
 export const revalidate = 1800;
 
 const EMPTY: { slug: string; title: string; cover: string | null }[] = [];
 
 export default async function Anime2Page() {
-  const [recentEps, recentAdded, popular] = await Promise.all([
+  const [recentEps, recentAdded, popular, accion, comedia] = await Promise.all([
     getAnime2RecentEpisodes().catch(() => []),
     getAnime2RecentAdded().catch(() => EMPTY),
     getAnime2Popular().catch(() => EMPTY),
+    getAnime2ByGenre("accion").catch(() => EMPTY),
+    getAnime2ByGenre("comedia").catch(() => EMPTY),
   ]);
 
   return (
@@ -23,69 +31,77 @@ export default async function Anime2Page() {
       </div>
 
       {recentEps.length > 0 && (
-        <section className="rail">
-          <div className="rail-head">
-            <h2>Episodios recientes</h2>
-            <span>Últimas actualizaciones</span>
-          </div>
-          <div className="rail-track">
-            {recentEps.map((ep, i) => (
-              <Link
-                key={`${ep.slug}-${ep.episode}`}
-                href={`/anime2/${ep.slug}/${ep.episode}`}
-                className="card"
-                style={{ width: "clamp(200px, 20vw, 280px)" }}
-              >
-                <div className="poster landscape">
-                  <PosterImg src={ep.cover} alt={ep.title} eager={i < 4} />
-                </div>
-                <span className="card-badge">E{ep.episode}</span>
-                <span className="card-label show">
-                  {ep.title}
-                  {ep.time && <small>{ep.time}</small>}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <Anime2Rail title="Episodios recientes" hint="Últimas actualizaciones">
+          {recentEps.map((ep, i) => (
+            <Link
+              key={`${ep.slug}-${ep.episode}`}
+              href={`/anime2/${ep.slug}/${ep.episode}`}
+              className="card"
+              style={{ width: "clamp(200px, 20vw, 280px)" }}
+            >
+              <div className="poster landscape">
+                <PosterImg src={ep.cover} alt={ep.title} eager={i < 4} />
+              </div>
+              <span className="card-badge">E{ep.episode}</span>
+              <span className="card-label show">
+                {ep.title}
+                {ep.time && <small>{ep.time}</small>}
+              </span>
+            </Link>
+          ))}
+        </Anime2Rail>
       )}
 
       {popular.length > 0 && (
-        <section className="rail">
-          <div className="rail-head">
-            <h2>Populares</h2>
-            <span>Lo más visto</span>
-          </div>
-          <div className="rail-track">
-            {popular.slice(0, 20).map((item, i) => (
-              <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
-                <div className="poster">
-                  <PosterImg src={item.cover} alt={item.title} eager={i < 4} />
-                </div>
-                <span className="card-label">{item.title}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <Anime2Rail title="Populares" hint="Lo más visto">
+          {popular.slice(0, 20).map((item, i) => (
+            <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+              <div className="poster">
+                <PosterImg src={item.cover} alt={item.title} eager={i < 4} />
+              </div>
+              <span className="card-label">{item.title}</span>
+            </Link>
+          ))}
+        </Anime2Rail>
+      )}
+
+      {accion.length > 0 && (
+        <Anime2Rail title="Acción" hint="Anime de acción">
+          {accion.slice(0, 20).map((item) => (
+            <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+              <div className="poster">
+                <PosterImg src={item.cover} alt={item.title} />
+              </div>
+              <span className="card-label">{item.title}</span>
+            </Link>
+          ))}
+        </Anime2Rail>
+      )}
+
+      {comedia.length > 0 && (
+        <Anime2Rail title="Comedia" hint="Para reír">
+          {comedia.slice(0, 20).map((item) => (
+            <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+              <div className="poster">
+                <PosterImg src={item.cover} alt={item.title} />
+              </div>
+              <span className="card-label">{item.title}</span>
+            </Link>
+          ))}
+        </Anime2Rail>
       )}
 
       {recentAdded.length > 0 && (
-        <section className="rail">
-          <div className="rail-head">
-            <h2>Recién agregados</h2>
-            <span>Novedades del catálogo</span>
-          </div>
-          <div className="rail-track">
-            {recentAdded.map((item, i) => (
-              <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
-                <div className="poster">
-                  <PosterImg src={item.cover} alt={item.title} />
-                </div>
-                <span className="card-label">{item.title}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <Anime2Rail title="Recién agregados" hint="Novedades del catálogo">
+          {recentAdded.map((item) => (
+            <Link key={item.slug} href={`/anime2/${item.slug}`} className="card">
+              <div className="poster">
+                <PosterImg src={item.cover} alt={item.title} />
+              </div>
+              <span className="card-label">{item.title}</span>
+            </Link>
+          ))}
+        </Anime2Rail>
       )}
     </div>
   );

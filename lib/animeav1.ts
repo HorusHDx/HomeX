@@ -108,6 +108,13 @@ export async function getAnime2Popular(): Promise<Anime2Item[]> {
   return parseCards(html);
 }
 
+export async function getAnime2ByGenre(genre: string): Promise<Anime2Item[]> {
+  if (!/^[a-z-]{3,40}$/.test(genre)) return [];
+  const { html } = await fetchHtml(`/catalogo?genre=${genre}`);
+  if (!html) return [];
+  return parseCards(html);
+}
+
 export interface Anime2RecentEpisode {
   slug: string;
   episode: number;
