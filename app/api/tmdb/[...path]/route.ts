@@ -15,7 +15,7 @@ export async function GET(
 
   const path = params.path.join("/");
   // Whitelist básica para evitar SSRF
-  if (!/^(movie|tv|search|trending|genre)\//.test(path) && !/^(movie|tv)$/.test(path.split("/")[0])) {
+  if (!/^(movie|tv|search|trending|genre|discover)\//.test(path) && !/^(movie|tv)$/.test(path.split("/")[0])) {
     return NextResponse.json({ error: "Ruta no permitida" }, { status: 403 });
   }
 

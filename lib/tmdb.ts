@@ -94,5 +94,17 @@ export const getGenres = async (type: MediaType) => {
 export const getRecommendations = (type: MediaType, id: number | string) =>
   fetchTMDB<TMDBResponse>(`/${type}/${id}/recommendations`);
 
+export const discover = (type: MediaType, params: Record<string, string> = {}) =>
+  fetchTMDB<TMDBResponse>(`/discover/${type}`, params);
+
+// Anime: animación japonesa (género 16 + idioma original ja)
+export const getAnime = (type: MediaType, sort = "popularity.desc") =>
+  discover(type, {
+    with_genres: "16",
+    with_original_language: "ja",
+    sort_by: sort,
+    ...(sort.startsWith("vote_average") ? { "vote_count.gte": "200" } : {}),
+  });
+
 export const imgUrl = (path: string | null, size: "w342" | "w500" | "original" | "w780" = "w500") =>
   path ? `${IMG_BASE}/${size}${path}` : null;

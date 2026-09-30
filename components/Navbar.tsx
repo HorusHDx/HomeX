@@ -34,6 +34,12 @@ const LINKS = [
     ),
   },
   {
+    href: "/anime",
+    label: "Anime",
+    active: (p: string) => p === "/anime",
+    icon: <path d="M13 2 4 14h6l-1 8 9-12h-6z" />,
+  },
+  {
     href: "/historial",
     label: "Historial",
     active: (p: string) => p === "/historial",
