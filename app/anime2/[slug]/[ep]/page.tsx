@@ -14,6 +14,8 @@ const LANG_LABELS: Record<string, string> = {
   latino: "Doblado Latino",
   subtitulado: "Subtitulado",
 };
+const LANG_TAG: Record<string, string> = { latino: "DOB", subtitulado: "SUB" };
+const langTag = (lang: string) => LANG_TAG[lang] || lang.slice(0, 3).toUpperCase();
 
 export default function Anime2WatchPage({ params }: Props) {
   const ep = Math.max(1, parseInt(params.ep, 10) || 1);
@@ -23,6 +25,14 @@ export default function Anime2WatchPage({ params }: Props) {
   const [title, setTitle] = useState(params.slug);
   const [cover, setCover] = useState<string | null>(null);
   const [episodes, setEpisodes] = useState<number[]>([]);
+  const [meta, setMeta] = useState<{
+    status: string | null;
+    kind: string | null;
+    year: string | null;
+    season: string | null;
+    rating: string | null;
+    genres: string[];
+  }>({ status: null, kind: null, year: null, season: null, rating: null, genres: [] });
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +50,14 @@ export default function Anime2WatchPage({ params }: Props) {
         if (info?.title) setTitle(info.title);
         if (info?.cover) setCover(info.cover);
         if (info?.episodes) setEpisodes(info.episodes);
+        setMeta({
+          status: info?.status || null,
+          kind: info?.kind || null,
+          year: info?.year || null,
+          season: info?.season || null,
+          rating: info?.rating || null,
+          genres: info?.genres || [],
+        });
         setLoading(false);
       })
       .catch(() => {
@@ -76,6 +94,28 @@ export default function Anime2WatchPage({ params }: Props) {
           <h1>{title} · E{ep}</h1>
         </div>
       </div>
+
+      {(meta.status || meta.kind || meta.year || meta.season || meta.rating) && (
+        <div className="watch-meta">
+          {meta.status && (
+            <span className={`status-pill${/emisi/i.test(meta.status) ? " live" : ""}`}>
+              {/emisi/i.test(meta.status) && <span className="live-dot" aria-hidden="true" />}
+              {meta.status}
+            </span>
+          )}
+          {meta.kind && <span>{meta.kind}</span>}
+          {meta.year && <span>{meta.year}</span>}
+          {meta.season && <span>{meta.season}</span>}
+          {meta.rating && <span className="score">★ {meta.rating}</span>}
+        </div>
+      )}
+      {meta.genres.length > 0 && (
+        <div className="title-genres" style={{ marginBottom: "1.2rem" }}>
+          {meta.genres.map((g) => (
+            <span key={g}>{g}</span>
+          ))}
+        </div>
+      )}
 
       <div className="watch-frame">
         {loading && (
@@ -130,6 +170,7 @@ export default function Anime2WatchPage({ params }: Props) {
                 onClick={() => setActive(s)}
               >
                 {s.name}
+                <span className="srv-tag">{langTag(s.lang)}</span>
               </button>
             ))}
           </div>
@@ -146,6 +187,7 @@ export default function Anime2WatchPage({ params }: Props) {
                 onClick={() => setActive(s)}
               >
                 {s.name}
+                <span className="srv-tag">{langTag(s.lang)}</span>
               </button>
             ))}
           </div>

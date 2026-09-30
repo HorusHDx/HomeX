@@ -9,6 +9,11 @@ export interface Anime2Info extends Anime2Item {
   genres: string[];
   episodesCount: number;
   episodes: number[];
+  status: string | null;
+  kind: string | null;
+  year: string | null;
+  season: string | null;
+  rating: string | null;
 }
 
 export interface Anime2Server {
@@ -167,8 +172,36 @@ export async function getAnime2Info(slug: string): Promise<Anime2Info | null> {
     cleanTitle(html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i)?.[1] || "") ||
     cleanTitle(html.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "") ||
     slug;
-  const cover = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)?.[1] || null;
+  // La ficha no trae og:image: el póster es el <img> con alt "... Poster"
+  const posterImg =
+    html.match(/<img[^>]+alt="[^"]*[Pp]oster"[^>]*>/i)?.[0] ||
+    html.match(/<img[^>]+src="(https:\/\/cdn\.animeav1\.com\/covers\/[^"]+)"[^>]*>/i)?.[0] ||
+    "";
+  const cover =
+    posterImg.match(/src="(https:\/\/cdn\.animeav1\.com\/covers\/[^"]+)"/i)?.[1] ||
+    html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)?.[1] ||
+    null;
   const synopsis = clean(html.match(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i)?.[1] || "");
+
+  // Línea "TV Anime • 2026 • Temporada Primavera • En emisión"
+  let airStatus: string | null = null;
+  let kind: string | null = null;
+  let year: string | null = null;
+  let season: string | null = null;
+  const metaDiv = html.match(/<div class="flex flex-wrap items-center gap-2 text-sm">([\s\S]*?)<\/div>/i)?.[1];
+  if (metaDiv) {
+    const parts = [...metaDiv.matchAll(/<span>([^<]*)<\/span>/gi)]
+      .map((m) => clean(m[1]))
+      .filter((s) => s && s !== "•");
+    if (parts.length >= 1) kind = parts[0] || null;
+    if (parts.length >= 2 && /^\d{4}$/.test(parts[1] || "")) year = parts[1];
+    if (parts.length >= 3) season = parts[2] || null;
+    if (parts.length >= 4) airStatus = parts[3] || null;
+  }
+
+  // Nota de MyAnimeList (bloque junto a "MAL RATING")
+  const rating =
+    html.match(/<div class="text-lead text-2xl font-bold">([\d.]+)<\/div>\s*<div[^>]*>\s*<div[^>]*>MAL RATING/i)?.[1] || null;
 
   const genres = [...html.matchAll(/href="\/catalogo\?genre=([a-z-]+)"[^>]*>([^<]+)</gi)]
     .map((m) => clean(m[2]))
@@ -196,6 +229,11 @@ export async function getAnime2Info(slug: string): Promise<Anime2Info | null> {
     genres,
     episodesCount: episodes.length ? episodes[episodes.length - 1] : 0,
     episodes,
+    status: airStatus,
+    kind,
+    year,
+    season,
+    rating,
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getAnime2Continue, type Anime2Entry } from "@/lib/continue";
+import { getAnime2Continue, patchAnime2Cover, type Anime2Entry } from "@/lib/continue";
 import PosterImg from "./PosterImg";
 import Anime2Rail from "@/app/anime2/Anime2Rail";
 
@@ -10,7 +10,20 @@ export default function Anime2ContinueWatching() {
   const [entries, setEntries] = useState<Anime2Entry[]>([]);
 
   useEffect(() => {
-    setEntries(getAnime2Continue().filter((e) => e.title));
+    const list = getAnime2Continue().filter((e) => e.title);
+    setEntries(list);
+    // Autocura: entradas viejas sin portada (el scraper no la daba antes)
+    for (const e of list.filter((x) => !x.cover)) {
+      fetch(`/api/anime2/info?slug=${encodeURIComponent(e.slug)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((info) => {
+          if (info?.cover) {
+            patchAnime2Cover(e.slug, info.cover);
+            setEntries((prev) => prev.map((p) => (p.slug === e.slug ? { ...p, cover: info.cover } : p)));
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   if (entries.length === 0) return null;
@@ -22,10 +35,9 @@ export default function Anime2ContinueWatching() {
           key={entry.slug}
           href={`/anime2/${entry.slug}/${entry.episode}`}
           className="card"
-          style={{ width: "clamp(200px, 20vw, 280px)" }}
           title={entry.title}
         >
-          <div className="poster landscape">
+          <div className="poster">
             <PosterImg src={entry.cover} alt={entry.title} eager />
           </div>
           <span className="card-badge">E{entry.episode}</span>

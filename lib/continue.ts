@@ -134,6 +134,20 @@ export function markAnime2Watched(
   writeA2([entry, ...rest]);
 }
 
+// Rellena la portada de entradas viejas guardadas sin cover (sin reordenar)
+export function patchAnime2Cover(slug: string, cover: string): void {
+  if (!slug || !cover) return;
+  const list = readA2();
+  let changed = false;
+  for (const e of list) {
+    if (e.slug === slug && !e.cover) {
+      e.cover = cover;
+      changed = true;
+    }
+  }
+  if (changed) writeA2(list);
+}
+
 export function clearAnime2Continue(slug?: string): void {
   if (!slug) {
     try {

@@ -30,8 +30,17 @@ export default async function Anime2DetailPage({ params }: Props) {
         <div className="title-info">
           <h1>{info.title}</h1>
           <div className="title-meta">
+            {info.status && (
+              <span className={`status-pill${/emisi/i.test(info.status) ? " live" : ""}`}>
+                {/emisi/i.test(info.status) && <span className="live-dot" aria-hidden="true" />}
+                {info.status}
+              </span>
+            )}
+            {info.kind && <span>{info.kind}</span>}
+            {info.year && <span>{info.year}</span>}
+            {info.season && <span>{info.season}</span>}
+            {info.rating && <span className="score">★ {info.rating}</span>}
             {info.episodesCount > 0 && <span>{info.episodesCount} episodios</span>}
-            <span>AnimeAV1</span>
           </div>
           {info.genres.length > 0 && (
             <div className="title-genres">
