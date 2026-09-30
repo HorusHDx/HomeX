@@ -23,7 +23,7 @@ export default function HistorialPage() {
   };
 
   const handleRemove = (id: number, media: string) => {
-    clearContinue(id);
+    clearContinue(id, media);
     setEntries(getContinue());
   };
 

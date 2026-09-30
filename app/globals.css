@@ -337,6 +337,7 @@ input { font: inherit; }
 
 .tile.top { display: flex; align-items: flex-end; width: clamp(196px, 19vw, 276px); }
 .tile.top .poster { position: relative; z-index: 1; width: 60%; flex: none; margin-left: auto; }
+.tile.wide { width: clamp(220px, 22vw, 300px); }
 .tile-num {
   position: absolute; left: -0.04em; bottom: -0.12em; z-index: 0; line-height: 0.8; font-weight: 900; letter-spacing: -0.09em;
   font-size: clamp(7.2rem, 11vw, 10.8rem); color: transparent;

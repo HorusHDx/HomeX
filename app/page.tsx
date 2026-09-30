@@ -24,12 +24,20 @@ export default async function HomePage() {
     safe(getTopRated("tv"), EMPTY),
   ]);
 
+  // trending/all puede traer personas: solo movie/tv
+  const trendingClean = {
+    ...trending,
+    results: trending.results.filter(
+      (i) => (i.media_type as string) !== "person" && (i.title || i.name)
+    ),
+  };
+
   return (
     <div>
-      <HeroCarousel items={trending.results} />
+      <HeroCarousel items={trendingClean.results} />
       <div className="rails">
         <ContinueWatching />
-        <Rail title="Top 10 de la semana" variant="top" items={trending.results} />
+        <Rail title="Top 10 de la semana" variant="top" items={trendingClean.results} />
         <Rail title="Películas populares" items={popularMovies.results} />
         <Rail title="Series populares" items={popularTv.results} />
         <Rail title="Películas mejor valoradas" items={topMovies.results} />

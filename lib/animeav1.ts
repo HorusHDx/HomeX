@@ -178,7 +178,15 @@ export async function getAnime2Info(slug: string): Promise<Anime2Info | null> {
   const epNums = [...html.matchAll(new RegExp(`href="/media/${slug}/(\\d+)"`, "g"))]
     .map((m) => parseInt(m[1], 10))
     .filter((n) => Number.isInteger(n) && n > 0);
-  const episodes = [...new Set(epNums)].sort((a, b) => a - b);
+  const listed = [...new Set(epNums)].sort((a, b) => a - b);
+
+  // El sitio pagina el listado a 50 con scroll infinito: si llega al tope,
+  // descubrir el total real probando existencia (solo series largas pagan esto)
+  let episodes = listed;
+  if (listed.length >= 50) {
+    const total = await expandEpisodeTotal(slug, listed[listed.length - 1]);
+    episodes = Array.from({ length: total }, (_, i) => i + 1);
+  }
 
   return {
     slug,
@@ -189,6 +197,78 @@ export async function getAnime2Info(slug: string): Promise<Anime2Info | null> {
     episodesCount: episodes.length ? episodes[episodes.length - 1] : 0,
     episodes,
   };
+}
+
+// La lista SSR trae 50 y el resto carga por scroll: el JSON del episodio
+// incluye "embeds" solo si existe. Búsqueda exponencial + binaria (cap 2000).
+const TOTAL_CACHE_TTL = 60 * 60 * 1000;
+const totalCache = new Map<string, { at: number; total: number }>();
+
+async function episodeExists(slug: string, n: number): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  try {
+    const res = await fetch(
+      `${AV1_BASE}/media/${slug}/${n}/__data.json?x-sveltekit-invalidated=011`,
+      { headers: { "User-Agent": UA, "x-sveltekit-data": "true", Accept: "*/*" }, signal: controller.signal }
+    );
+    if (!res.ok) return false;
+    const text = await res.text();
+    return text.length > 1000 && text.includes("embeds");
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function expandEpisodeTotal(slug: string, knownMax: number): Promise<number> {
+  const hit = totalCache.get(slug);
+  if (hit && Date.now() - hit.at < TOTAL_CACHE_TTL) return hit.total;
+
+  let total = knownMax;
+  try {
+    // fase exponencial en paralelo (upper=2001 como tope absoluto)
+    let n = knownMax + 1;
+    let upper = 2001;
+    while (n <= 2000) {
+      const batch = [n, n * 2, n * 4].filter((x) => x <= 2000);
+      const res = await Promise.all(batch.map((x) => episodeExists(slug, x)));
+      if (res[0]) {
+        total = batch[0];
+        if (res[1]) {
+          total = batch[1];
+          if (res[2]) {
+            total = batch[2];
+            n = batch[2] * 2;
+            continue;
+          }
+          upper = batch[2];
+          break;
+        }
+        upper = batch[1];
+        break;
+      }
+      upper = batch[0];
+      break;
+    }
+    // fase binaria entre total (existe) y upper (no existe o tope)
+    if (upper > total + 1) {
+      let lo = total;
+      let hi = upper;
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (await episodeExists(slug, mid)) lo = mid;
+        else hi = mid;
+      }
+      total = lo;
+    }
+  } catch {
+    total = knownMax;
+  }
+
+  totalCache.set(slug, { at: Date.now(), total });
+  return total;
 }
 
 // ---- servidores (SvelteKit __data.json) ----

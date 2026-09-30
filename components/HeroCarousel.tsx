@@ -61,7 +61,7 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
         const on = i === cur;
         const tab = on ? 0 : -1;
         return (
-          <article key={item.id} className={`slide${on ? " on" : ""}`} aria-hidden={!on}>
+          <article key={`${type}-${item.id}-${i}`} className={`slide${on ? " on" : ""}`} aria-hidden={!on}>
             <div className="slide-art">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -111,7 +111,7 @@ export default function HeroCarousel({ items }: { items: TMDBItem[] }) {
       <div className="hero-bars">
         {slides.map((s, i) => (
           <button
-            key={s.id}
+            key={`${s.media_type || (s.title ? "movie" : "tv")}-${s.id}-${i}`}
             className={`hero-bar${i === cur ? " on" : i < cur ? " done" : ""}`}
             onClick={() => setCur(i)}
             aria-label={`Ir al destacado ${i + 1}`}

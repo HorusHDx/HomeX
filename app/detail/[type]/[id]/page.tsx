@@ -26,7 +26,7 @@ export default async function DetailPage({ params }: Props) {
   if (params.type !== "movie" && params.type !== "tv") notFound();
 
   const detail = await getDetail(params.type, params.id).catch(() => null);
-  if (!detail) notFound();
+  if (!detail || typeof detail.vote_average !== "number" || (!detail.title && !detail.name)) notFound();
 
   const title = detail.title || detail.name || "";
   const year = (detail.release_date || detail.first_air_date || "").slice(0, 4);
