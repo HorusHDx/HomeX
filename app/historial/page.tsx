@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getContinue, clearContinue, ContinueEntry } from "@/lib/continue";
 import { imgUrl } from "@/lib/tmdb";
+import PosterImg from "@/components/PosterImg";
 
 export default function HistorialPage() {
   const [entries, setEntries] = useState<ContinueEntry[]>([]);
@@ -75,11 +76,9 @@ export default function HistorialPage() {
                 className="card"
               >
                 {entry.poster ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <PosterImg
                     src={imgUrl(entry.poster, "w500")!}
                     alt={entry.title}
-                    loading="lazy"
                   />
                 ) : (
                   <div className="skeleton ratio" />

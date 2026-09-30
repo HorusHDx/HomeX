@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TMDBItem, imgUrl } from "@/lib/tmdb";
+import PosterImg from "@/components/PosterImg";
 import Link from "next/link";
 
 function SearchResults() {
@@ -44,7 +45,7 @@ function SearchResults() {
 
   return (
     <div className="grid">
-      {results.map((item) => {
+      {results.map((item, i) => {
         const type = item.media_type || (item.title ? "movie" : "tv");
         return (
           <Link
@@ -53,11 +54,10 @@ function SearchResults() {
             className="card"
           >
             {item.poster_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <PosterImg
                 src={imgUrl(item.poster_path, "w500")!}
-                alt={item.title || item.name}
-                loading="lazy"
+                alt={item.title || item.name || ""}
+                eager={i < 6}
               />
             ) : (
               <div className="skeleton ratio" />
