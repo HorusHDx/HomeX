@@ -17,9 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const detail = await getDetail(params.type, params.id).catch(() => null);
   if (!detail) return { title: "No encontrado" };
   const title = detail.title || detail.name || "Detalle";
+  const description = detail.overview?.slice(0, 160) || "Ver online en HomeX";
+  const images = detail.backdrop_path
+    ? [imgUrl(detail.backdrop_path, "w780")!]
+    : detail.poster_path
+      ? [imgUrl(detail.poster_path, "w500")!]
+      : [];
   return {
-    title: `${title} | HomeX`,
-    description: detail.overview?.slice(0, 160) || "Ver online en HomeX",
+    title,
+    description,
+    openGraph: { title: `${title} | HomeX`, description, images },
+    twitter: { card: "summary_large_image", title: `${title} | HomeX`, description, images },
   };
 }
 

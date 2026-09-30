@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Splash from "@/components/Splash";
-import QuickViewProvider from "@/components/QuickView";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,8 +11,28 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HomeX - Streaming",
-  description: "Tu plataforma de streaming personal",
+  metadataBase: new URL("https://home-x-jet.vercel.app"),
+  title: {
+    default: "HomeX - Streaming",
+    template: "%s | HomeX",
+  },
+  description: "HomeX: películas, series y anime para ver online. Catálogo, tendencias y episodios recientes.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    siteName: "HomeX",
+    title: "HomeX - Streaming",
+    description: "Películas, series y anime para ver online.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HomeX - Streaming",
+    description: "Películas, series y anime para ver online.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,19 +47,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={inter.className}>
       <body>
         <Splash />
-        <QuickViewProvider>
-          <Navbar />
-          <main className="main">{children}</main>
-          <footer className="foot">
-            <span className="logo" style={{ fontSize: "1rem" }}>
-              <b>HOME</b>
-              <i>X</i>
-            </span>
-            <span>
-              HomeX no aloja ningún video. Todo el contenido es proporcionado por terceros no afiliados. Datos e imágenes de TMDB, sin aval de TMDB.
-            </span>
-          </footer>
-        </QuickViewProvider>
+        <Navbar />
+        <main className="main">{children}</main>
+        <footer className="foot">
+          <span className="logo" style={{ fontSize: "1rem" }}>
+            <b>HOME</b>
+            <i>X</i>
+          </span>
+          <span>
+            HomeX no aloja ningún video. Todo el contenido es proporcionado por terceros no afiliados. Datos e imágenes de TMDB, sin aval de TMDB.
+          </span>
+        </footer>
       </body>
     </html>
   );
