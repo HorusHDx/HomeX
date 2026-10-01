@@ -62,6 +62,10 @@ function WatchInner({ params }: Props) {
   // Server2 no operativo (falta NSR_API_KEY en el servidor): lo decimos
   // claro en vez de mostrar un "no hay servidores" que miente.
   const [twoNoKey, setTwoNoKey] = useState(false);
+  // Motivo por el que Server2 no pudo listar servidores (límite de la API,
+  // timeout, key rechazada...): se muestra en vez de un "no hay servidores"
+  // que no explica nada.
+  const [nsrError, setNsrError] = useState("");
   // Servidores de Server2 que ya fallaron: se marcan en la lista y se evitan.
   const [badServers, setBadServers] = useState<number[]>([]);
   // Espejos en ref: onStreamFailed se dispara desde hls.js y necesita leer
@@ -108,12 +112,16 @@ function WatchInner({ params }: Props) {
     setStreamLoading(false);
     setBadServers([]);
     setTwoNoKey(false);
+    setNsrError("");
     nsrServersRef.current = [];
     nsrActiveRef.current = null;
     badRef.current = [];
   }, [params.type, params.id, season, episode]);
 
   const playNsrServer = async (index: number) => {
+    const server = nsrServersRef.current.find((s) => s.index === index);
+    if (!server) return;
+
     nsrActiveRef.current = index;
     setNsrActive(index);
     setStreamLoading(true);
@@ -124,19 +132,25 @@ function WatchInner({ params }: Props) {
       badRef.current = [...badRef.current, index];
       setBadServers(badRef.current);
     };
+
     try {
-      const qs = new URLSearchParams({
-        type: params.type,
-        id: params.id,
-        season: String(season),
-        episode: String(episode),
-        index: String(index),
-      });
-      const res = await fetch(`/api/nsr/stream?${qs}`);
+      // Algunos servidores ya traen el proxy resuelto: se reproduce sin
+      // gastar ninguna llamada a la API de NSR.
+      if (server.url) {
+        setStream({ url: server.url, format: "hls" });
+        return;
+      }
+      const res = await fetch(`/api/nsr/stream?ref=${encodeURIComponent(server.ref)}`);
       const data = await res.json();
       if (!res.ok || !data?.url) {
         markBad();
         return;
+      }
+      // El servidor compite con los dos siguientes del mismo idioma: si
+      // gana otro, la lista se posiciona en el que realmente va a sonar.
+      if (typeof data.index === "number" && data.index !== index) {
+        nsrActiveRef.current = data.index;
+        setNsrActive(data.index);
       }
       setStream({ url: data.url, format: data.format === "mp4" ? "mp4" : "hls" });
     } catch {
@@ -179,6 +193,12 @@ function WatchInner({ params }: Props) {
       const data = await res.json();
       if (data?.noKey) {
         setTwoNoKey(true);
+        setNsrServers([]);
+        setNsrLoaded(true);
+        return;
+      }
+      if (data?.reason) {
+        setNsrError(String(data.reason));
         setNsrServers([]);
         setNsrLoaded(true);
         return;
@@ -381,7 +401,15 @@ function WatchInner({ params }: Props) {
               </div>
             )}
 
-            {!nsrLoading && nsrLoaded && !twoNoKey && nsrServers.length === 0 && (
+            {!nsrLoading && nsrLoaded && !twoNoKey && nsrError && (
+              <div className="state">
+                <h3>Server2 no disponible ahora</h3>
+                <p>{nsrError}. Podés reintentar o usar Server1.</p>
+                <button onClick={() => switchSource("server1")}>Usar Server1</button>
+              </div>
+            )}
+
+            {!nsrLoading && nsrLoaded && !twoNoKey && !nsrError && nsrServers.length === 0 && (
               <div className="state">
                 <h3>Sin servidores para este título</h3>
                 <p>Server2 tampoco tiene fuentes disponibles ahora mismo.</p>

@@ -18,6 +18,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const servers = await getNsrServers(target);
-  return NextResponse.json({ servers }, { headers: { "Cache-Control": "no-store" } });
+  const res = await getNsrServers(target);
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: `Server2 no respondió: ${res.reason}`, reason: res.reason },
+      { status: 502, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  return NextResponse.json(
+    { servers: res.servers },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

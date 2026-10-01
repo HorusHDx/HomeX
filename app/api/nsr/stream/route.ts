@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseNsrTarget, resolveNsrStream, isNsrConfigured } from "@/lib/nsr";
+import { isNsrConfigured, parseNsrTarget, resolveNsrRef } from "@/lib/nsr";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 15;
+// Puede encadenar dos llamadas lentas a NSR (listar fuentes + canjear token).
+export const maxDuration = 20;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const target = parseNsrTarget(searchParams);
-  if (!target) {
-    return NextResponse.json({ error: "Parámetros inválidos: type, id" }, { status: 400 });
-  }
 
   if (!isNsrConfigured()) {
     return NextResponse.json(
@@ -18,20 +15,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const index = parseInt(searchParams.get("index") || "", 10);
-  if (!Number.isInteger(index) || index < 0) {
-    return NextResponse.json({ error: "Parámetro index inválido" }, { status: 400 });
+  const ref = searchParams.get("ref") || "";
+  if (!ref) {
+    // Sin ref no podemos resolver: el target ya se usó al listar servidores.
+    return NextResponse.json({ error: "Falta el parámetro ref" }, { status: 400 });
   }
 
-  // El token vive 5 min y es de un solo uso: se canjea en cada cambio de
-  // servidor, no antes. Nunca devolvemos directUrl (viene atado a la IP de NSR).
-  const stream = await resolveNsrStream(target, index);
-  if (!stream) {
+  // El token viene firmado: nunca devolvemos directUrl (viene atado a la IP
+  // de NSR y respondería 403 desde el navegador).
+  const res = await resolveNsrRef(ref);
+  if (!res.ok) {
     return NextResponse.json(
-      { error: "No se pudo obtener el stream de ese servidor" },
-      { status: 404 }
+      { error: `No se pudo obtener el stream: ${res.reason}`, reason: res.reason },
+      { status: 404, headers: { "Cache-Control": "no-store" } }
     );
   }
 
-  return NextResponse.json(stream, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(
+    { url: res.stream.url, format: res.stream.format, index: res.index, name: res.name, lang: res.lang },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }
