@@ -35,16 +35,30 @@ export async function GET(request: NextRequest) {
 
   try {
     const servers = await scrapeServers(embedUrl);
+    const noSources = countRealServers(servers) === 0;
     return NextResponse.json(
-      { servers, embedUrl, noSources: countRealServers(servers) === 0 },
-      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
+      { servers, embedUrl, noSources },
+      {
+        headers: {
+          // Unlimplay tarda 4-6s en scrapear un título. Con SWR el CDN
+          // sirve una copia vieja al instante y la refresca por detrás, así
+          // que ni el primer visitante espera. Los "sin fuentes" se cachean
+          // poco: suelen ser un fallo temporal de su scraper.
+          "Cache-Control": noSources
+            ? "public, s-maxage=120, stale-while-revalidate=600"
+            : "public, s-maxage=900, stale-while-revalidate=86400",
+        },
+      }
     );
   } catch {
-    return NextResponse.json({
-      servers: [{ name: "Servidor Principal", url: embedUrl, lang: "original" }],
-      embedUrl,
-      noSources: true,
-    });
+    return NextResponse.json(
+      {
+        servers: [{ name: "Servidor Principal", url: embedUrl, lang: "original" }],
+        embedUrl,
+        noSources: true,
+      },
+      { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } }
+    );
   }
 }
 

@@ -59,6 +59,9 @@ function WatchInner({ params }: Props) {
   const [stream, setStream] = useState<{ url: string; format: "hls" | "mp4" } | null>(null);
   const [streamLoading, setStreamLoading] = useState(false);
   const [streamError, setStreamError] = useState(false);
+  // Server2 no operativo (falta NSR_API_KEY en el servidor): lo decimos
+  // claro en vez de mostrar un "no hay servidores" que miente.
+  const [twoNoKey, setTwoNoKey] = useState(false);
   // Servidores de Server2 que ya fallaron: se marcan en la lista y se evitan.
   const [badServers, setBadServers] = useState<number[]>([]);
   // Espejos en ref: onStreamFailed se dispara desde hls.js y necesita leer
@@ -104,6 +107,7 @@ function WatchInner({ params }: Props) {
     setStreamError(false);
     setStreamLoading(false);
     setBadServers([]);
+    setTwoNoKey(false);
     nsrServersRef.current = [];
     nsrActiveRef.current = null;
     badRef.current = [];
@@ -173,6 +177,12 @@ function WatchInner({ params }: Props) {
       });
       const res = await fetch(`/api/nsr/servers?${qs}`);
       const data = await res.json();
+      if (data?.noKey) {
+        setTwoNoKey(true);
+        setNsrServers([]);
+        setNsrLoaded(true);
+        return;
+      }
       const list: NsrServer[] = Array.isArray(data?.servers) ? data.servers : [];
       nsrServersRef.current = list;
       setNsrServers(list);
@@ -363,7 +373,15 @@ function WatchInner({ params }: Props) {
               </div>
             )}
 
-            {!nsrLoading && nsrLoaded && nsrServers.length === 0 && (
+            {!nsrLoading && nsrLoaded && twoNoKey && (
+              <div className="state">
+                <h3>Server2 sin configurar</h3>
+                <p>Falta la variable NSR_API_KEY en el servidor de Vercel.</p>
+                <button onClick={() => switchSource("server1")}>Volver a Server1</button>
+              </div>
+            )}
+
+            {!nsrLoading && nsrLoaded && !twoNoKey && nsrServers.length === 0 && (
               <div className="state">
                 <h3>Sin servidores para este título</h3>
                 <p>Server2 tampoco tiene fuentes disponibles ahora mismo.</p>

@@ -37,6 +37,12 @@ function apiKey(): string {
   return process.env.NSR_API_KEY || "";
 }
 
+// Sin key el Server2 no puede funcionar: mejor decirlo claro que fallar
+// en silencio con un "no hay servidores" que confunde al usuario.
+export function isNsrConfigured(): boolean {
+  return apiKey().length > 0;
+}
+
 function headers(): HeadersInit {
   const h: Record<string, string> = {
     "User-Agent": UA,
