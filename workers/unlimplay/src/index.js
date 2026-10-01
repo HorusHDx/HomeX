@@ -293,6 +293,340 @@ async function cachePut(cache, key, entry) {
   );
 }
 
+// ------------------------------------------- resolucion directa wish-family
+// Los embeds de Unlimplay que mas fallan en iframe (doodstream, filemoon,
+// streamwish, filelions...) esconden el m3u8 en un JS empaquetado
+// (p-a-c-k-e-r). Resolverlo aqui y servirlo directo evita montar iframes
+// que solo muestran publicidad o error. Patron copiado de la referencia
+// (rs.arcando.cloud): /stream (302 al m3u8) + /proxyvideo (proxy CORS).
+
+const WISH_HOSTS = [
+  "morencius.com",
+  "embedwish.com",
+  "bysejikuar.com",
+  "filelions.",
+  "streamwish.",
+  "vidhide",
+  "filemoon",
+];
+
+function isWishEmbed(url) {
+  const l = url.toLowerCase();
+  return WISH_HOSTS.some((h) => l.includes(h));
+}
+
+async function fetchText(url, referer, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": UA,
+        ...(referer ? { Referer: referer } : {}),
+        "Accept-Language": "es-ES,es;q=0.9",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Sec-Fetch-Dest": "iframe",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+        "Upgrade-Insecure-Requests": "1",
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.length > HTML_LIMIT ? null : text;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Lee una cadena '...' manejando escapes. start apunta a la comilla inicial.
+function readQString(s, start) {
+  let out = "";
+  let k = start + 1;
+  while (k < s.length) {
+    const ch = s[k];
+    if (ch === "\\" && k + 1 < s.length) {
+      out += s[k + 1];
+      k += 2;
+      continue;
+    }
+    if (ch === "'") return { value: out, end: k };
+    out += ch;
+    k++;
+  }
+  return null;
+}
+
+// Localiza eval(function(p,a,c,k,e,d){...}(...)) balanceando parentesis.
+function findPackedCall(html) {
+  const start = html.indexOf("eval(function(p,a,c,k,e,d)");
+  if (start < 0) return null;
+  let depth = 0;
+  let inStr = false;
+  let escaped = false;
+  for (let k = start + 4; k < html.length; k++) {
+    const ch = html[k];
+    if (inStr) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === "'") inStr = false;
+      continue;
+    }
+    if (ch === "'") inStr = true;
+    else if (ch === "(") depth++;
+    else if (ch === ")") {
+      depth--;
+      if (depth === 0) return html.slice(start, k + 1);
+    }
+  }
+  return null;
+}
+
+const PACKER_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function packerEncode(n, a) {
+  let s = "";
+  do {
+    s = PACKER_ALPHABET[n % a] + s;
+    n = Math.floor(n / a);
+  } while (n > 0);
+  return s;
+}
+
+// Desempaqueta Dean Edwards p-a-c-k-e-r. Devuelve el codigo o null.
+function unpackPacker(call) {
+  const ps = call.indexOf("}('");
+  if (ps < 0) return null;
+  const p = readQString(call, ps + 2);
+  if (!p) return null;
+  const m = call.slice(p.end + 1, p.end + 80).match(/^,(\d+),(\d+),'/);
+  if (!m) return null;
+  const ks = readQString(call, p.end + m[0].length);
+  if (!ks) return null;
+  const kws = ks.value.split("|");
+  const a = parseInt(m[1], 10);
+  const c = parseInt(m[2], 10);
+  const dict = {};
+  for (let x = c - 1; x >= 0; x--) {
+    if (kws[x]) dict[packerEncode(x, a)] = kws[x];
+  }
+  return p.value.replace(/\b\w+\b/g, (w) => (dict[w] !== undefined ? dict[w] : w));
+}
+
+function extractM3u8(code) {
+  const found = [...code.matchAll(/"(https?:[^"]*?\.m3u8[^"]*)"/g)].map((x) => x[1]);
+  // Los master con urlset son los preferidos: traen todas las calidades.
+  found.sort((x, y) => (y.includes("urlset") ? 1 : 0) - (x.includes("urlset") ? 1 : 0));
+  return found.length ? found[0] : null;
+}
+
+// Resuelve un embed wish-family a su m3u8 y lo verifica con 1 byte.
+// Devuelve { url } o { error } con el motivo, para poder diagnosticar.
+async function resolveWishEmbed(embedUrl, explain) {
+  const html = await fetchText(embedUrl, `${UNLIM_BASE}/`, FETCH_TIMEOUT_MS);
+  if (!html) return { error: "embed sin respuesta" };
+  const call = findPackedCall(html);
+  if (!call) return { error: "sin player empaquetado" };
+  const code = unpackPacker(call);
+  if (!code) return { error: "no se pudo desempaquetar" };
+  const m3u8 = extractM3u8(code);
+  if (!m3u8) return { error: "sin m3u8 en el codigo" };
+  if (explain) explain.found = m3u8.slice(0, 80);
+
+  // Verificacion barata: pedimos 1 byte con el referer del embed.
+  try {
+    const host = new URL(embedUrl).origin + "/";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(m3u8, {
+      headers: { "User-Agent": UA, Referer: host, Range: "bytes=0-1" },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    await res.arrayBuffer().catch(() => null);
+    if (res.status !== 200 && res.status !== 206) return { error: `CDN respondio ${res.status}` };
+    return { url: m3u8 };
+  } catch {
+    return { error: "CDN sin respuesta" };
+  }
+}
+
+// ------------------------------------------------------------------ /stream
+// Cache corta para directos: el token del CDN caduca, asi que no se guarda
+// por horas como la lista (15 min) sino por minutos.
+const STREAM_FRESH_S = 300;
+const STREAM_STALE_S = 900;
+
+function streamCacheKey(origin, type, id, season, episode, lang) {
+  return `${CACHE_KEY_PREFIX}stream/${type}/${id}/${season}/${episode}/${lang}`;
+}
+
+// Elige candidatos: primero el idioma pedido y que sean wish-family
+// (resolubles), despues el resto del mismo idioma.
+function pickCandidates(servers, lang) {
+  const wanted = servers.filter((s) => s.lang === lang);
+  const rest = servers.filter((s) => s.lang !== lang);
+  const rank = (s) => (isWishEmbed(s.url) ? 0 : 1);
+  return [...wanted, ...rest].sort((a, b) => rank(a) - rank(b)).slice(0, 4);
+}
+
+// /stream?type=movie&id=550&lang=latino -> 302 al m3u8 directo.
+// ?format=json -> { url, provider, lang } en vez de redirigir.
+async function handleStream(url, env, request) {
+  let type = (url.searchParams.get("type") || "").toLowerCase();
+  if (type === "movies") type = "movie";
+  if (type === "tvshows" || type === "series") type = "tv";
+  const id = url.searchParams.get("id") || "";
+  if ((type !== "movie" && type !== "tv") || !/^\d+$/.test(id)) {
+    return json({ error: "Parametros invalidos: type, id" }, 400);
+  }
+  const season = Math.max(1, parseInt(url.searchParams.get("s") || url.searchParams.get("season") || "1", 10) || 1);
+  const episode = Math.max(1, parseInt(url.searchParams.get("e") || url.searchParams.get("episode") || "1", 10) || 1);
+  const lang = (url.searchParams.get("lang") || "latino").toLowerCase();
+  const asJson = (url.searchParams.get("format") || "").toLowerCase() === "json";
+
+  const respond = (found) => {
+    if (!found) {
+      return json({ error: "Ningun servidor resoluble ahora mismo", type, id, season, episode }, 404);
+    }
+    if (asJson) {
+      return json({ url: found.url, provider: found.name, lang: found.lang, type, id });
+    }
+    return Response.redirect(found.url, 302);
+  };
+
+  const cache = caches.default;
+  const key = streamCacheKey(url.origin, type, id, season, episode, lang);
+  const now = Date.now() / 1000;
+  const cached = await cacheGet(cache, key);
+  if (cached && now < cached.freshUntil) {
+    return respond(cached.body);
+  }
+
+  const embedUrl = embedUrlFor(type, id, season, episode);
+  const result = await scrape(embedUrl);
+  const real = result.servers.filter(
+    (s) => !(s.name === "Servidor Principal" && s.url === embedUrl)
+  );
+  if (!real.length) {
+    return json({ error: "Sin servidores para este titulo", type, id }, 404);
+  }
+
+  const candidates = pickCandidates(real, lang);
+  const debug = (url.searchParams.get("debug") || "") === "1";
+  const attempts = [];
+  const winner = await Promise.any(
+    candidates.map(async (s) => {
+      const info = {};
+      const r = await resolveWishEmbed(s.url, debug ? info : undefined);
+      if (!r.url) {
+        if (debug) attempts.push({ server: s.name, error: r.error, found: info.found || null });
+        throw new Error(r.error);
+      }
+      return { url: r.url, name: s.name, lang: s.lang };
+    })
+  ).catch(() => null);
+
+  if (!winner && debug) {
+    return json({ error: "Ningun servidor resoluble ahora mismo", type, id, attempts }, 404);
+  }
+
+  if (winner) {
+    const entry = { at: Math.round(now), freshUntil: Math.round(now) + STREAM_FRESH_S, staleUntil: Math.round(now) + STREAM_STALE_S, body: winner };
+    try {
+      await cachePut(cache, key, entry);
+    } catch {}
+  }
+  return respond(winner);
+}
+
+// -------------------------------------------------------------- /proxyvideo
+// ?url=<m3u8 o ts>&ref=<embed de origen> — CORS abierto para el player.
+// Los m3u8 se reescriben para que listas y segmentos pasen por aqui.
+function proxied(origin, target, ref) {
+  return `${origin}/proxyvideo?url=${encodeURIComponent(target)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`;
+}
+
+function rewriteM3u8(body, base, origin, ref) {
+  return body
+    .split("\n")
+    .map((line) => {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) {
+        // Las URIs pueden venir en atributos: URI="...".
+        return line.replace(/URI="([^"]+)"/g, (mm, u) => {
+          try {
+            return `URI="${proxied(origin, new URL(u, base).toString(), ref)}"`;
+          } catch {
+            return mm;
+          }
+        });
+      }
+      try {
+        return proxied(origin, new URL(t, base).toString(), ref);
+      } catch {
+        return line;
+      }
+    })
+    .join("\n");
+}
+
+async function handleProxyVideo(url) {
+  const target = url.searchParams.get("url") || "";
+  const ref = url.searchParams.get("ref") || "";
+  if (!/^https?:\/\//i.test(target)) {
+    return json({ error: "Parametro url invalido" }, 400);
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const upstream = await fetch(target, {
+      headers: {
+        "User-Agent": UA,
+        ...(ref ? { Referer: ref } : {}),
+        Accept: "*/*",
+      },
+      signal: controller.signal,
+    });
+    if (!upstream.ok || !upstream.body) {
+      return json({ error: `Origen respondio ${upstream.status}` }, 502);
+    }
+
+    const ct = (upstream.headers.get("content-type") || "").toLowerCase();
+    const headers = {
+      "access-control-allow-origin": "*",
+      "access-control-expose-headers": "*",
+      "cache-control": "public, max-age=30",
+    };
+
+    if (ct.includes("mpegurl") || target.includes(".m3u8")) {
+      const text = await upstream.text();
+      const out = rewriteM3u8(text, target, url.origin, ref);
+      return new Response(out, {
+        headers: { ...headers, "content-type": "application/vnd.apple.mpegurl" },
+      });
+    }
+
+    return new Response(upstream.body, {
+      headers: {
+        ...headers,
+        "content-type": upstream.headers.get("content-type") || "application/octet-stream",
+        ...(upstream.headers.get("content-length")
+          ? { "content-length": upstream.headers.get("content-length") }
+          : {}),
+      },
+    });
+  } catch {
+    return json({ error: "El origen no respondio" }, 504);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ------------------------------------------------------------------- router
 
 function embedUrlFor(type, id, season, episode) {
@@ -354,8 +688,21 @@ export default {
       }
     }
 
+    // /stream redirige (302) al m3u8 directo del mejor servidor, como la
+    // referencia. ?format=json devuelve el dato en vez de redirigir.
+    // ?lang filtra idioma (latino por defecto).
+    if (path === "/stream") {
+      return handleStream(url, env, request);
+    }
+
+    // /proxyvideo?url=...&ref=... sirve el m3u8 o segmento con CORS abierto,
+    // reescribiendo las URLs internas para que todo pase por aqui.
+    if (path === "/proxyvideo") {
+      return handleProxyVideo(url);
+    }
+
     if (path !== "/" && path !== "/extract" && !/^\/movie\/\d+$/.test(path) && !/^\/tv\/\d+\/\d+\/\d+$/.test(path)) {
-      return json({ error: "Ruta no encontrada. Usa /extract, /movie/:id o /tv/:id/:s/:e" }, 404);
+      return json({ error: "Ruta no encontrada. Usa /extract, /movie/:id, /tv/:id/:s/:e, /stream o /proxyvideo" }, 404);
     }
 
     if ((type !== "movie" && type !== "tv") || !/^\d+$/.test(id)) {
