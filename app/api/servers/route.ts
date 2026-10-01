@@ -36,10 +36,21 @@ export async function GET(request: NextRequest) {
   try {
     const servers = await scrapeServers(embedUrl);
     return NextResponse.json(
-      { servers, embedUrl },
+      { servers, embedUrl, noSources: countRealServers(servers) === 0 },
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
     );
   } catch {
-    return NextResponse.json({ servers: [{ name: "Servidor Principal", url: embedUrl, lang: "original" }], embedUrl });
+    return NextResponse.json({
+      servers: [{ name: "Servidor Principal", url: embedUrl, lang: "original" }],
+      embedUrl,
+      noSources: true,
+    });
   }
+}
+
+// El scraper devuelve un único "Servidor Principal" (la URL del embed tal
+// cual) cuando no logra extraer fuentes. No es un servidor real: sirve para
+// distinguir "no hay nada" de "hay servidores".
+function countRealServers(servers: { name: string }[]): number {
+  return servers.filter((s) => s.name !== "Servidor Principal").length;
 }

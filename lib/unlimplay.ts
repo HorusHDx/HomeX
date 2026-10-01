@@ -201,7 +201,16 @@ async function fetchHtml(embedUrl: string): Promise<{ status: number; html: stri
         "User-Agent": UA,
         Referer: `${UNLIM_BASE}/`,
         "Accept-Language": "es-ES,es;q=0.9",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        // Imprescindible: el WAF de Unlimplay solo permite pasar a quien
+        // finge ser la navegación real de un <iframe> embebido. Sin
+        // Sec-Fetch-Dest responden 403 "Acceso Bloqueado" (ERR_TOKEN_EXPIRED)
+        // y el scraper no encuentra ningún servidor.
+        "Sec-Fetch-Dest": "iframe",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+        "Upgrade-Insecure-Requests": "1",
       },
       signal: controller.signal,
     });

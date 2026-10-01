@@ -44,6 +44,8 @@ function WatchInner({ params }: Props) {
   const [servers, setServers] = useState<ScrapedServer[]>([]);
   const [activeServer, setActiveServer] = useState<ScrapedServer | null>(null);
   const [loading, setLoading] = useState(true);
+  // Server1 no logró extraer ninguna fuente: saltamos solos a Server2.
+  const [oneEmpty, setOneEmpty] = useState(false);
   const [isFull, setIsFull] = useState(false);
   const [episodes, setEpisodes] = useState<TMDBEpisode[]>([]);
   const [detailData, setDetailData] = useState<{ title: string; poster: string | null } | null>(null);
@@ -69,6 +71,7 @@ function WatchInner({ params }: Props) {
     let cancelled = false;
     setLoading(true);
     setActiveServer(null);
+    setOneEmpty(false);
     fetch(`/api/servers?type=${params.type}&id=${encodeURIComponent(params.id)}&season=${season}&episode=${episode}`)
       .then((r) => r.json())
       .then((data) => {
@@ -76,10 +79,14 @@ function WatchInner({ params }: Props) {
         const srv = data.servers || [];
         setServers(srv);
         setActiveServer(srv[0] || null);
+        setOneEmpty(data.noSources === true);
         setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setOneEmpty(true);
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -183,6 +190,18 @@ function WatchInner({ params }: Props) {
     setSource(next);
     if (next === "server2" && !nsrLoaded && !nsrLoading) void loadNsr();
   };
+
+  // Server1 sin fuentes: pasamos solos a Server2 tras un instante, para que el
+  // letrero "Sin servidores para este título" se vea antes de cambiar.
+  // El usuario siempre puede volver a Server1 con el botón.
+  useEffect(() => {
+    if (loading || !oneEmpty) return;
+    const t = window.setTimeout(() => switchSource("server2"), 900);
+    return () => window.clearTimeout(t);
+    // switchSource se recrea en cada render: solo interesa disparar una vez
+    // cuando Server1 termina de cargar vacío.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, oneEmpty]);
 
   useEffect(() => {
     let cancelled = false;
@@ -312,15 +331,19 @@ function WatchInner({ params }: Props) {
               </div>
             )}
 
-            {!loading && !activeServer && (
+            {!loading && oneEmpty && (
               <div className="state">
                 <h3>Sin servidores para este título</h3>
-                <p>Server1 no tiene ninguna fuente disponible ahora mismo.</p>
-                <button onClick={() => switchSource("server2")}>Probar Server2</button>
+                <p>Server1 no tiene ninguna fuente. Buscando en Server2…</p>
+                <button onClick={() => switchSource("server2")}>Ver Server2</button>
               </div>
             )}
 
-            {activeServer && (
+            {/* Con oneEmpty no montamos el iframe del embed: Unlimplay no
+                encontró nada y solo se vería su pantalla de error. El botón
+                "Servidor Principal" de la lista sigue disponible por si el
+                usuario quiere probarlo a mano. */}
+            {activeServer && !oneEmpty && (
               <iframe
                 key={activeServer.url}
                 src={activeServer.url}
