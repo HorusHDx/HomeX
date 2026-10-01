@@ -506,6 +506,21 @@ input { font: inherit; }
 }
 .watch-fullbtn:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-1px); }
 
+/* selector Server1 / Server2 */
+.watch-src {
+  flex: 0 0 auto; display: inline-flex; gap: 0.25rem; padding: 0.25rem;
+  background: rgba(17,27,46,0.8); border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px; backdrop-filter: blur(8px);
+}
+.watch-srcbtn {
+  border: 0; background: transparent; color: var(--fg-dim);
+  font-size: 0.85rem; font-weight: 700; letter-spacing: -0.01em;
+  padding: 0.45rem 1.05rem; border-radius: 999px; cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+}
+.watch-srcbtn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.watch-srcbtn.on { background: #fff; color: #000; box-shadow: 0 6px 20px rgba(255,255,255,0.22); }
+
 .watch-frame {
   position: relative; width: 100%; aspect-ratio: 16 / 9;
   background: #000; border-radius: var(--radius-lg); overflow: hidden;
@@ -513,6 +528,20 @@ input { font: inherit; }
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .watch-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+
+/* reproductor nativo (Server2) */
+.hls-player { position: absolute; inset: 0; background: #000; }
+.hls-video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+.hls-buf {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--fg-faint); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.02em;
+  background: radial-gradient(500px 220px at 50% 50%, rgba(26,38,60,0.6), transparent);
+  pointer-events: none;
+}
+.hls-error {
+  position: absolute; inset: 0; display: flex; flex-direction: column; gap: 0.9rem;
+  align-items: center; justify-content: center; color: var(--fg-dim); font-size: 0.95rem; font-weight: 600;
+}
 .watch-loading {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
@@ -545,6 +574,8 @@ input { font: inherit; }
 }
 .watch-server:hover { color: #fff; border-color: rgba(255,255,255,0.35); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
 .watch-server.on { background: #fff; border-color: #fff; color: #000; box-shadow: 0 8px 26px rgba(255,255,255,0.25); }
+.watch-server.bad { opacity: 0.55; border-color: rgba(255,107,107,0.4); }
+.watch-server.bad:hover { opacity: 0.9; }
 
 /* ---------- meta del reproductor Anime2 ---------- */
 .watch-meta {
@@ -588,6 +619,7 @@ input { font: inherit; }
 @media (max-width: 720px) {
   .watch-top { flex-wrap: wrap; gap: 0.75rem; }
   .watch-fullbtn { order: 3; width: 100%; }
+  .watch-src { order: 2; }
   .watch-nav { flex-wrap: wrap; justify-content: center; }
   .watch-navbtn { flex: 1; min-width: 45%; }
   .watch-nav-pos { order: -1; width: 100%; text-align: center; }
