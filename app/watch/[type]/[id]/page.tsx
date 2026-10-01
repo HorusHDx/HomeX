@@ -221,18 +221,6 @@ function WatchInner({ params }: Props) {
     if (next === "server2" && !nsrLoaded && !nsrLoading) void loadNsr();
   };
 
-  // Server1 sin fuentes: pasamos solos a Server2 tras un instante, para que el
-  // letrero "Sin servidores para este título" se vea antes de cambiar.
-  // El usuario siempre puede volver a Server1 con el botón.
-  useEffect(() => {
-    if (loading || !oneEmpty) return;
-    const t = window.setTimeout(() => switchSource("server2"), 900);
-    return () => window.clearTimeout(t);
-    // switchSource se recrea en cada render: solo interesa disparar una vez
-    // cuando Server1 termina de cargar vacío.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, oneEmpty]);
-
   useEffect(() => {
     let cancelled = false;
     // Vía proxy /api/tmdb para no exponer la key
@@ -364,7 +352,7 @@ function WatchInner({ params }: Props) {
             {!loading && oneEmpty && (
               <div className="state">
                 <h3>Sin servidores para este título</h3>
-                <p>Server1 no tiene ninguna fuente. Buscando en Server2…</p>
+                <p>Server1 no tiene ninguna fuente. Probá con Server2.</p>
                 <button onClick={() => switchSource("server2")}>Ver Server2</button>
               </div>
             )}
