@@ -1,0 +1,7 @@
+name = "homex-unlimplay"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# El Worker no necesita KV: usa la Cache API del edge, que ya viene incluida.
+# Aqui solo se configura el secreto con:
+#   npx wrangler secret put WORKER_TOKEN
